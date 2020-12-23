@@ -1,0 +1,22 @@
+from hamcrest import assert_that, equal_to
+
+from aoc.day1.expense_report import calculate_expense
+
+
+class TestCalculateExpense:
+    def test_it_should_calculate_expense_for_small_example(self):
+        # GIVEN
+        numbers = [
+            1721,
+            979,
+            366,
+            299,
+            675,
+            1456
+        ]
+
+        # WHEN
+        res = calculate_expense(numbers)
+
+        # THEN
+        assert_that(res, equal_to(514579))

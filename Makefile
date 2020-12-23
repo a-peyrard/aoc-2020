@@ -19,7 +19,7 @@ requirements:
 
 check-coding-style: requirements
 		$(PEP8) $(PYTHON_MODULES)
-		$(PYLINT) -E $(PYTHON_MODULES)
+		#$(PYLINT) -E $(PYTHON_MODULES)
 
 pylint-full: check-coding-style
 		$(PYLINT) $(PYTHON_MODULES)
