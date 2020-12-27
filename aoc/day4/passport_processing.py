@@ -116,8 +116,8 @@ import os
 from typing import Iterator, Set, Dict, List, Callable
 
 from aoc.day4.functional import compose
-from aoc.day4.validators import ValueValidator, number_validator, or_validator, regex_extractor, exists_validator, \
-    in_validator
+from aoc.day4.validators import ValueValidator, number_validator, or_validator, regex_extractor, in_validator, \
+    regex_validator
 
 REQUIRED_PASSPORT_FIELDS: Dict[str, ValueValidator] = {
     "byr": number_validator(min_bound=1920, max_bound=2002),
@@ -127,9 +127,9 @@ REQUIRED_PASSPORT_FIELDS: Dict[str, ValueValidator] = {
         compose(number_validator(min_bound=150, max_bound=193), regex_extractor(r"^(\d+)cm$")),
         compose(number_validator(min_bound=59, max_bound=76), regex_extractor(r"^(\d+)in$"))
     ]),
-    "hcl": compose(exists_validator, regex_extractor(r"^(#[0-9abcdef]{6})$")),
+    "hcl": regex_validator(r"#[0-9abcdef]{6}"),
     "ecl": in_validator({"amb", "blu", "brn", "gry", "grn", "hzl", "oth"}),
-    "pid": compose(exists_validator, regex_extractor(r"^(\d{9})$"))
+    "pid": regex_validator(r"\d{9}")
 }
 
 

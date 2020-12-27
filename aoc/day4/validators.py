@@ -1,6 +1,8 @@
 import re
 from typing import Callable, List, Optional, Set
 
+from aoc.day4.functional import compose
+
 ValueValidator = Callable[[Optional[str]], bool]
 ValueExtractor = Callable[[str], Optional[str]]
 
@@ -25,6 +27,10 @@ def exists_validator(val: Optional[str]) -> bool:
 
 def in_validator(allowed_values: Set[str]) -> ValueValidator:
     return lambda val: val in allowed_values
+
+
+def regex_validator(regex: str) -> ValueValidator:
+    return compose(exists_validator, regex_extractor(f"^({regex})$"))
 
 
 def regex_extractor(regex: str) -> ValueExtractor:

@@ -3,7 +3,8 @@ import re
 from hamcrest import assert_that, equal_to
 
 from aoc.day4.functional import compose
-from aoc.day4.validators import number_validator, or_validator, regex_extractor, exists_validator, in_validator
+from aoc.day4.validators import number_validator, or_validator, regex_extractor, exists_validator, in_validator, \
+    regex_validator
 
 
 class TestNumberValidator:
@@ -146,6 +147,18 @@ class TestComposedValidators:
 
         # WHEN
         res = validator(val)
+
+        # THEM
+        assert_that(res, equal_to(True))
+
+
+class TestRegexValidator:
+    def test_should_validate_regex(self):
+        # GIVEN
+        val = "093154719"
+
+        # WHEN
+        res = regex_validator(r"\d{9}")(val)
 
         # THEM
         assert_that(res, equal_to(True))
