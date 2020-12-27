@@ -21,8 +21,8 @@ def or_validator(validators: List[ValueValidator]) -> ValueValidator:
     return lambda val: any((validator(val) for validator in validators))
 
 
-def exists_validator(val: Optional[str]) -> bool:
-    return val is not None
+def exists_validator() -> ValueValidator:
+    return lambda val: val is not None
 
 
 def in_validator(allowed_values: Set[str]) -> ValueValidator:
@@ -30,7 +30,7 @@ def in_validator(allowed_values: Set[str]) -> ValueValidator:
 
 
 def regex_validator(regex: str) -> ValueValidator:
-    return compose(exists_validator, regex_extractor(f"^({regex})$"))
+    return compose(exists_validator(), regex_extractor(f"^({regex})$"))
 
 
 def regex_extractor(regex: str) -> ValueExtractor:

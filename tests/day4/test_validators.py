@@ -99,7 +99,7 @@ class TestExistsValidator:
         val = "foobar"
 
         # WHEN
-        res = exists_validator(val)
+        res = exists_validator()(val)
 
         # THEN
         assert_that(res, equal_to(True))
@@ -109,7 +109,7 @@ class TestExistsValidator:
         val = None
 
         # WHEN
-        res = exists_validator(val)
+        res = exists_validator()(val)
 
         # THEN
         assert_that(res, equal_to(False))
@@ -142,7 +142,7 @@ class TestInValidator:
 class TestComposedValidators:
     def test_should_validate_simple_regex(self):
         # GIVEN
-        validator = compose(exists_validator, regex_extractor(r"^(\d{9})$"))
+        validator = compose(exists_validator(), regex_extractor(r"^(\d{9})$"))
         val = "093154719"
 
         # WHEN
