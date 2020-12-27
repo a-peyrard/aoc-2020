@@ -1,6 +1,6 @@
 from hamcrest import equal_to, assert_that
 
-from aoc.day5.binary_boarding import Seat, calculate_seat_id, get_seat_from_boarding_pass
+from aoc.day5.binary_boarding import Seat, calculate_seat_id, get_seat_from_boarding_pass, find_missing_seat
 
 
 class TestCalculateSeatId:
@@ -59,3 +59,15 @@ class TestGetSeatFromBoardingPass:
         # THEN
         assert_that(row, equal_to(102))
         assert_that(column, equal_to(4))
+
+
+class TestFindMissingSeat:
+    def test_should_find_missing_id(self):
+        # GIVEN
+        seat_ids = [5, 6, 8, 9]
+
+        # WHEN
+        seat_id = find_missing_seat(seat_ids)
+
+        # THEN
+        assert_that(seat_id, equal_to(7))

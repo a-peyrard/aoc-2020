@@ -37,6 +37,16 @@ Here are some other boarding passes:
     BBFFBBFRLL: row 102, column 4, seat ID 820.
 As a sanity check, look through your list of boarding passes. What is the highest seat ID on a boarding pass?
 
+--- Part Two ---
+
+Ding! The "fasten seat belt" signs have turned on. Time to find your seat.
+It's a completely full flight, so your seat should be the only missing boarding pass in your list. However, there's
+a catch: some of the seats at the very front and back of the plane don't exist on this aircraft, so they'll be missing
+ from your list as well.
+Your seat wasn't at the very front or back, though; the seats with IDs +1 and -1 from yours will be in your list.
+What is the ID of your seat?
+
+
 """
 import os
 from functools import reduce
@@ -74,6 +84,17 @@ def replay_binary_search(bounds: Tuple[int, int], steps: Iterable[int]) -> int:
     return reduce(reducer, steps, bounds)[0]
 
 
+def find_missing_seat(seat_ids: List[int]) -> int:
+    min_seat_id = seat_ids[0]
+    counter = min_seat_id
+    for seat_id in seat_ids:
+        if seat_id != counter:
+            return counter
+        counter += 1
+
+    raise ValueError("Unable to find seat")
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
         boarding_passes = list(map(str.rstrip, file.readlines()))
@@ -88,3 +109,12 @@ if __name__ == "__main__":
             )
         )
         print(f"solution (part1): {solution_part1}")
+
+        solution_part2 = find_missing_seat(list(sorted(map(
+            calculate_seat_id,
+            map(
+                get_seat_from_boarding_pass,
+                boarding_passes
+            )
+        ))))
+        print(f"solution (part2): {solution_part2}")
