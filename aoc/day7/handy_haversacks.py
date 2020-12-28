@@ -29,6 +29,31 @@ In the above rules, the following options would be available to you:
 So, in this example, the number of bag colors that can eventually contain at least one shiny gold bag is 4.
 How many bag colors can eventually contain at least one shiny gold bag? (The list of rules is quite long; make sure you
  get all of it.)
+
+--- Part Two ---
+
+It's getting pretty expensive to fly these days - not because of ticket prices, but because of the ridiculous number of
+ bags you need to buy!
+Consider again your shiny gold bag and the rules from the above example:
+    faded blue bags contain 0 other bags.
+    dotted black bags contain 0 other bags.
+    vibrant plum bags contain 11 other bags: 5 faded blue bags and 6 dotted black bags.
+    dark olive bags contain 7 other bags: 3 faded blue bags and 4 dotted black bags.
+So, a single shiny gold bag must contain 1 dark olive bag (and the 7 bags within it) plus 2 vibrant plum bags (and the
+ 11 bags within each of those): 1 + 1*7 + 2 + 2*11 = 32 bags!
+Of course, the actual rules have a small chance of going several levels deeper than this example; be sure to count all
+ of the bags, even if the nesting becomes topologically impractical!
+Here's another example:
+shiny gold bags contain 2 dark red bags.
+dark red bags contain 2 dark orange bags.
+dark orange bags contain 2 dark yellow bags.
+dark yellow bags contain 2 dark green bags.
+dark green bags contain 2 dark blue bags.
+dark blue bags contain 2 dark violet bags.
+dark violet bags contain no other bags.
+In this example, a single shiny gold bag must contain 126 other bags.
+How many individual bags are required inside your single shiny gold bag?
+
 """
 import os
 import re
@@ -36,16 +61,21 @@ from collections import defaultdict
 from typing import List, NamedTuple, Iterable, Dict, DefaultDict, Optional
 
 
+class Content(NamedTuple):
+    quantity: int
+    bag_name: str
+
+
 class Bag(NamedTuple):
-    contain: List[str]
+    contains: List[Content]
     is_contained_by: List[str]
 
 
 DEFINITION_REGEX = re.compile(r"^(.*?) bags contain (.*)\.$")
-CONTAIN_REGEX = re.compile(r"^\d+ (.*?) bags?$")
+CONTAIN_REGEX = re.compile(r"^(\d+) (.*?) bags?$")
 
 
-def count_bags_containing(bags: Dict[str, Bag], bag_name: str) -> int:
+def count_bags_containing(bag_name: str, bags: Dict[str, Bag]) -> int:
     def pop(li: List[str]) -> Optional[str]:
         try:
             return li.pop()
@@ -65,8 +95,17 @@ def count_bags_containing(bags: Dict[str, Bag], bag_name: str) -> int:
     return len(containers)
 
 
+def count_bags_into(bag_name: str, bags: Dict[str, Bag]) -> int:
+    contains = bags[bag_name].contains
+    number_of_bags = 0
+    for quantity, content_bag_name in contains:
+        number_of_bags += quantity + (quantity * count_bags_into(content_bag_name, bags))
+
+    return number_of_bags
+
+
 def _parse(definitions: Iterable[str]) -> Dict[str, Bag]:
-    bags = defaultdict(lambda: Bag(contain=[], is_contained_by=[]))
+    bags = defaultdict(lambda: Bag(contains=[], is_contained_by=[]))
     for definition in definitions:
         _parse_definition(definition.rstrip(), bags)
 
@@ -80,23 +119,26 @@ def _parse_definition(definition: str, bags: DefaultDict[str, Bag]) -> None:
 
     bag_name = matcher.group(1)
     contain = _extract_contain(matcher.group(2))
-    bags[bag_name].contain.extend(contain)
-    for bag in contain:
+    bags[bag_name].contains.extend(contain)
+    for _, bag in contain:
         bags[bag].is_contained_by.append(bag_name)
 
 
-def _extract_contain(contain: str) -> List[str]:
-    def extract_bag_name(raw_bag: str) -> Optional[str]:
+def _extract_contain(contain: str) -> List[Content]:
+    def extract_content(raw_bag: str) -> Optional[Content]:
         if raw_bag == "no other bags":
             return None
 
         matcher = CONTAIN_REGEX.search(raw_bag)
-        if not matcher or len(matcher.groups()) != 1:
+        if not matcher or len(matcher.groups()) != 2:
             raise ValueError(f"Unable to get bag name from {raw_bag}")
 
-        return matcher.group(1)
+        return Content(
+            quantity=int(matcher.group(1)),
+            bag_name=matcher.group(2)
+        )
 
-    return list(filter(None, map(extract_bag_name, contain.split(", "))))
+    return list(filter(None, map(extract_content, contain.split(", "))))
 
 
 if __name__ == "__main__":
@@ -104,7 +146,13 @@ if __name__ == "__main__":
         raw_definitions = list(file.readlines())
 
         solution_part1 = count_bags_containing(
-            bags=_parse(raw_definitions),
-            bag_name="shiny gold"
+            bag_name="shiny gold",
+            bags=_parse(raw_definitions)
         )
         print(f"solution (part1): {solution_part1}")
+
+        solution_part2 = count_bags_into(
+            bag_name="shiny gold",
+            bags=_parse(raw_definitions)
+        )
+        print(f"solution (part2): {solution_part2}")
