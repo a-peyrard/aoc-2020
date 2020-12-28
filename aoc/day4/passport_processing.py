@@ -118,6 +118,7 @@ from typing import Iterator, Set, Dict, List, Callable
 from aoc.day4.functional import compose
 from aoc.day4.validators import ValueValidator, number_validator, or_validator, regex_extractor, in_validator, \
     regex_validator
+from aoc.util.text import generate_paragraphs
 
 REQUIRED_PASSPORT_FIELDS: Dict[str, ValueValidator] = {
     "byr": number_validator(min_bound=1920, max_bound=2002),
@@ -168,21 +169,6 @@ def generate_passport(entries: List[str]) -> Dict[str, str]:
             res[key] = value
 
     return res
-
-
-def generate_paragraphs(raw_entries: Iterator[str]) -> Iterator[List[str]]:
-    buf = []
-    for raw_entry in raw_entries:
-        entry = raw_entry.rstrip()
-        if entry:
-            buf.append(entry)
-        else:
-            if buf:
-                yield buf
-                buf = []
-
-    if buf:
-        yield buf
 
 
 if __name__ == "__main__":
