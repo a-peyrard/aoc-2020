@@ -84,7 +84,7 @@ Fix the program so that it terminates normally by changing exactly one jmp (to n
 import os
 import re
 from enum import Enum
-from typing import List, NamedTuple, Iterable, Tuple, Optional
+from typing import List, NamedTuple, Iterable, Tuple, Optional, Dict
 
 
 class Type(Enum):
@@ -98,16 +98,23 @@ class Instruction(NamedTuple):
     value: int
 
 
+class History(NamedTuple):
+    pc: int
+    acc: int
+
+
 INSTRUCTION_REGEX = re.compile(r"^(\w+) ([+-]\d+)$")
 
 
-def play_instructions(instructions: List[Instruction]) -> Tuple[int, bool]:
-    executed_instructions = set()
-    cursor = 0
-    accumulator = 0
+def play_instructions(instructions: List[Instruction],
+                      executed_instructions: Dict[int, History],
+                      initial_instruction: int = 0,
+                      initial_accumulator: int = 0) -> Tuple[int, bool]:
+    cursor = initial_instruction
+    accumulator = initial_accumulator
     while cursor not in executed_instructions and cursor < len(instructions):
-        executed_instructions.add(cursor)
         instruction_type, value = instructions[cursor]
+        executed_instructions[cursor] = History(cursor, accumulator)
         if instruction_type == Type.ACC:
             accumulator += value
             cursor += 1
@@ -129,24 +136,41 @@ def _parse(raw_instructions: Iterable[str]) -> List[Instruction]:
 
 
 def fix_program(instructions: List[Instruction]) -> int:
-    for cursor in range(len(instructions)):
-        new_instruction = _change_instruction(instructions[cursor])
-        if new_instruction:
-            new_instructions = list(instructions)
-            new_instructions[cursor] = new_instruction
-            accumulator, terminate = play_instructions(new_instructions)
+    history = {}
+    # play a first time the program to make it do the loop
+    accumulator, terminate = play_instructions(instructions, history)
+    if terminate:
+        return accumulator
+
+    # freeze what are the instructions that have been executed,
+    # we don't need to change not executed ones
+    executed_instructions = list(history.keys())
+    for pc in executed_instructions:
+        instruction_type, value = instructions[pc]
+        if instruction_type == Type.ACC:
+            continue
+
+        new_acc = history[pc].acc
+        if instruction_type == Type.JMP:
+            # replace jump by nop (so execute next instruction)
+            new_pc = pc + 1
+        else:
+            # replace nop by jump
+            new_pc = pc + value
+
+        if new_pc not in history:
+            # the new instruction is not in the history, so we might want to give
+            # it a try, it might succeed...
+            accumulator, terminate = play_instructions(
+                instructions,
+                history,
+                initial_instruction=pc + 1,
+                initial_accumulator=history[pc].acc
+            )
             if terminate:
                 return accumulator
 
     raise ValueError("Unable to fix the program")
-
-
-def _change_instruction(instruction: Instruction) -> Optional[Instruction]:
-    if instruction.type == Type.NOP or instruction.type == Type.JMP:
-        return Instruction(
-            type=Type.JMP if instruction.type == Type.NOP else Type.NOP,
-            value=instruction.value
-        )
 
 
 def _parse_instruction(raw_instruction: str) -> Instruction:
@@ -164,7 +188,7 @@ if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
         raw_instructions_from_file = list(file.readlines())
 
-        solution_part1, _ = play_instructions(_parse(raw_instructions_from_file))
+        solution_part1, _ = play_instructions(_parse(raw_instructions_from_file), {})
         print(f"solution (part1): {solution_part1}")
 
         solution_part2 = fix_program(_parse(raw_instructions_from_file))

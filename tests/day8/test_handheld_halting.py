@@ -18,7 +18,8 @@ acc +6"""
 
         # WHEN
         res, _ = play_instructions(
-            _parse(instructions.splitlines(keepends=True))
+            _parse(instructions.splitlines(keepends=True)),
+            {}
         )
 
         # THEN
