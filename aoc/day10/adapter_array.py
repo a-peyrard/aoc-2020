@@ -82,13 +82,54 @@ of 3 jolts.
 Find a chain that uses all of your adapters to connect the charging outlet to your device's built-in adapter and count
  the joltage differences between the charging outlet, the adapters, and your device. What is the number of 1-jolt
   differences multiplied by the number of 3-jolt differences?
+
+--- Part Two ---
+To completely determine whether you have enough adapters, you'll need to figure out how many different ways they can be
+ arranged. Every arrangement needs to connect the charging outlet to your device. The previous rules about when adapters
+  can successfully connect still apply.
+The first example above (the one that starts with 16, 10, 15) supports the following arrangements:
+(0), 1, 4, 5, 6, 7, 10, 11, 12, 15, 16, 19, (22)
+(0), 1, 4, 5, 6, 7, 10, 12, 15, 16, 19, (22)
+(0), 1, 4, 5, 7, 10, 11, 12, 15, 16, 19, (22)
+(0), 1, 4, 5, 7, 10, 12, 15, 16, 19, (22)
+(0), 1, 4, 6, 7, 10, 11, 12, 15, 16, 19, (22)
+(0), 1, 4, 6, 7, 10, 12, 15, 16, 19, (22)
+(0), 1, 4, 7, 10, 11, 12, 15, 16, 19, (22)
+(0), 1, 4, 7, 10, 12, 15, 16, 19, (22)
+(The charging outlet and your device's built-in adapter are shown in parentheses.) Given the adapters from the first
+example, the total number of arrangements that connect the charging outlet to your device is 8.
+The second example above (the one that starts with 28, 33, 18) has many arrangements. Here are a few:
+(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 48, 49, (52)
+(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 49, (52)
+(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+32, 33, 34, 35, 38, 39, 42, 45, 46, 48, 49, (52)
+(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+32, 33, 34, 35, 38, 39, 42, 45, 46, 49, (52)
+(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+32, 33, 34, 35, 38, 39, 42, 45, 47, 48, 49, (52)
+(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+46, 48, 49, (52)
+(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+46, 49, (52)
+(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+47, 48, 49, (52)
+(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+47, 49, (52)
+(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+48, 49, (52)
+In total, this set of adapters can connect the charging outlet to your device in 19208 distinct arrangements.
+You glance back down at your bag and try to remember why you brought so many adapters; there must be more than a
+trillion valid ways to arrange them! Surely, there must be an efficient way to count the arrangements.
+What is the total number of distinct ways you can arrange the adapters to connect the charging outlet to your device?
 """
 import os
-from collections import deque
-from typing import Iterable, List, Deque
+from collections import defaultdict
+from typing import List, Tuple, Set, Dict
 
 
-def find_joltage_difference(adapters: List[int]) -> int:
+def _get_set_and_max(adapters: List[int]) -> Tuple[Set[int], int]:
     # create a set of values and find the max in a single pass
     adapters_set = set()
     max_joltage = adapters[0]
@@ -96,6 +137,12 @@ def find_joltage_difference(adapters: List[int]) -> int:
         adapters_set.add(number)
         if number > max_joltage:
             max_joltage = number
+
+    return adapters_set, max_joltage
+
+
+def find_joltage_difference(adapters: List[int]) -> int:
+    adapters_set, max_joltage = _get_set_and_max(adapters)
 
     diffs_of_one = 0
     diffs_of_three = 1  # we have at least one three between built-in device and max adapter
@@ -115,9 +162,65 @@ def find_joltage_difference(adapters: List[int]) -> int:
     return diffs_of_one * diffs_of_three
 
 
+def find_adapters_arrangements(adapters: List[int]) -> int:
+    tree = _build_adapters_tree(*_get_set_and_max(adapters))
+
+    return count_arrangements_rec(
+        adapter=0,
+        adapters_tree=tree,
+        visited={}
+    )
+
+
+def count_arrangements_rec(adapter: int,
+                           adapters_tree: Dict[int, List[int]],
+                           visited: Dict[int, int]) -> int:
+
+    if adapter in visited:
+        return visited[adapter]
+
+    children = adapters_tree[adapter]
+    number_of_arrangements = 1
+    if children:
+        number_of_arrangements = sum((
+            count_arrangements_rec(child, adapters_tree, visited)
+            for child in children
+        ))
+
+    visited[adapter] = number_of_arrangements
+
+    return number_of_arrangements
+
+
+def _build_adapters_tree(adapters_set: Set[int], max_joltage: int) -> Dict[int, List[int]]:
+    tree = defaultdict(list)
+    current_joltage = 0
+    while current_joltage < max_joltage:
+        new_joltage = None
+        if (current_joltage + 1) in adapters_set:
+            tree[current_joltage].append(current_joltage + 1)
+            new_joltage = new_joltage or current_joltage + 1
+        if (current_joltage + 2) in adapters_set:
+            tree[current_joltage].append(current_joltage + 2)
+            new_joltage = new_joltage or current_joltage + 2
+        if (current_joltage + 3) in adapters_set:
+            tree[current_joltage].append(current_joltage + 3)
+            new_joltage = new_joltage or current_joltage + 3
+
+        if not new_joltage:
+            raise ValueError(f"unable to find next adapter, current joltage is {current_joltage}")
+
+        current_joltage = new_joltage
+
+    return tree
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
         numbers_from_file = list(map(int, file.readlines()))
 
         solution_part1 = find_joltage_difference(numbers_from_file)
         print(f"solution (part1): {solution_part1}")
+
+        solution_part2 = find_adapters_arrangements(numbers_from_file)
+        print(f"solution (part2): {solution_part2}")
