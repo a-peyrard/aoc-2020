@@ -33,6 +33,34 @@ At the end of these instructions, the ship's Manhattan distance (sum of the abso
 and its north/south position) from its starting position is 17 + 8 = 25.
 Figure out where the navigation instructions lead. What is the Manhattan distance between that location and the ship's
 starting position?
+
+--- Part Two ---
+Before you can give the destination to the captain, you realize that the actual action meanings were printed on the back
+ of the instructions the whole time.
+Almost all of the actions indicate how to move a waypoint which is relative to the ship's position:
+    Action N means to move the waypoint north by the given value.
+    Action S means to move the waypoint south by the given value.
+    Action E means to move the waypoint east by the given value.
+    Action W means to move the waypoint west by the given value.
+    Action L means to rotate the waypoint around the ship left (counter-clockwise) the given number of degrees.
+    Action R means to rotate the waypoint around the ship right (clockwise) the given number of degrees.
+    Action F means to move forward to the waypoint a number of times equal to the given value.
+The waypoint starts 10 units east and 1 unit north relative to the ship. The waypoint is relative to the ship; that is,
+if the ship moves, the waypoint moves with it.
+For example, using the same instructions as above:
+    F10 moves the ship to the waypoint 10 times (a total of 100 units east and 10 units north), leaving the ship at east
+     100, north 10. The waypoint stays 10 units east and 1 unit north of the ship.
+    N3 moves the waypoint 3 units north to 10 units east and 4 units north of the ship. The ship remains at east 100,
+    north 10.
+    F7 moves the ship to the waypoint 7 times (a total of 70 units east and 28 units north), leaving the ship at east
+    170, north 38. The waypoint stays 10 units east and 4 units north of the ship.
+    R90 rotates the waypoint around the ship clockwise 90 degrees, moving it to 4 units east and 10 units south of the
+    ship. The ship remains at east 170, north 38.
+    F11 moves the ship to the waypoint 11 times (a total of 44 units east and 110 units south), leaving the ship at east
+     214, south 72. The waypoint stays 4 units east and 10 units south of the ship.
+After these operations, the ship's Manhattan distance from its starting position is 214 + 72 = 286.
+Figure out where the navigation instructions actually lead. What is the Manhattan distance between that location and the
+ ship's starting position?
 """
 import os
 from enum import Enum
@@ -66,6 +94,9 @@ class Instruction(NamedTuple):
     value: int
 
 
+DIRECTION_TYPES = {Type.NORTH, Type.EAST, Type.SOUTH, Type.WEST}
+
+
 def move(instructions: List[Instruction],
          position: Position,
          direction: Direction) -> Position:
@@ -76,10 +107,7 @@ def move(instructions: List[Instruction],
     return position
 
 
-def _move_instruction(instruction: Instruction,
-                      position: Position,
-                      direction: Direction) -> Tuple[Position, Direction]:
-
+def _move_toward_direction(instruction: Instruction, position: Position) -> Position:
     if instruction.type == Type.EAST:
         position = Position(position.x + instruction.value, position.y)
     elif instruction.type == Type.WEST:
@@ -88,6 +116,20 @@ def _move_instruction(instruction: Instruction,
         position = Position(position.x, position.y + instruction.value)
     elif instruction.type == Type.SOUTH:
         position = Position(position.x, position.y - instruction.value)
+    else:
+        raise ValueError(f"Unknown instruction type {instruction}")
+
+    return position
+
+
+def _move_instruction(instruction: Instruction,
+                      position: Position,
+                      direction: Direction) -> Tuple[Position, Direction]:
+    if instruction.type in DIRECTION_TYPES:
+        position = _move_toward_direction(
+            instruction,
+            position
+        )
     elif instruction.type == Type.FORWARD:
         # simulate an instruction with a direction being the current direction
         position, direction = _move_instruction(
@@ -103,9 +145,54 @@ def _move_instruction(instruction: Instruction,
     return position, direction
 
 
+def move2(instructions: List[Instruction],
+          position: Position,
+          waypoint: Position) -> Position:
+    for instruction in instructions:
+        position, waypoint = _move2_instruction(
+            instruction,
+            position,
+            waypoint,
+        )
+
+    return position
+
+
+def _move2_instruction(instruction: Instruction,
+                       position: Position,
+                       waypoint: Position) -> Tuple[Position, Position]:
+
+    if instruction.type in DIRECTION_TYPES:
+        waypoint = _move_toward_direction(
+            instruction,
+            waypoint
+        )
+    elif instruction.type == Type.FORWARD:
+        position = Position(
+            x=position.x + (instruction.value * waypoint.x),
+            y=position.y + (instruction.value * waypoint.y)
+        )
+    elif instruction.type == Type.LEFT:
+        # transform the turn left into a turn right
+        waypoint = _turn2(360 - instruction.value, waypoint)
+    elif instruction.type == Type.RIGHT:
+        waypoint = _turn2(instruction.value, waypoint)
+
+    return position, waypoint
+
+
 def _turn(value: int, direction: Direction) -> Direction:
     new_value = (direction.value + value) % 360
     return Direction(new_value)
+
+
+def _turn2(value: int, waypoint: Position) -> Position:
+    if value == 90:
+        return Position(waypoint.y, -1 * waypoint.x)
+    if value == 180:
+        return Position(-1 * waypoint.x, -1 * waypoint.y)
+    if value == 270:
+        return Position(-1 * waypoint.y, waypoint.x)
 
 
 def calculate_manhattan_distance(orig: Position, dest: Position) -> int:
@@ -142,3 +229,17 @@ if __name__ == "__main__":
         )
         print(f"solution (part1): {solution_part1}")
         assert solution_part1 == 1007
+
+        initial_position = Position()
+        final_position = move2(
+            instructions=instructions_from_file,
+            position=initial_position,
+            waypoint=Position(10, 1)
+        )
+        solution_part2 = calculate_manhattan_distance(
+            orig=initial_position,
+            dest=final_position
+        )
+        print(f"final position (part2): {final_position}")
+        print(f"solution (part2): {solution_part2}")
+        assert solution_part2 == 41212
