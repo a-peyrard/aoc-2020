@@ -1,6 +1,6 @@
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, contains_inanyorder
 
-from aoc.day14.docking_data import Mask, execute_program
+from aoc.day14.docking_data import Mask, execute_program, MaskV2, execute_program_v2, sum_memory
 
 
 class TestMask:
@@ -86,3 +86,89 @@ mem[6] = 4"""
             9: 13,
             6: 5
         }))
+
+
+class TestGenerateCombinations:
+    def test_should_generate_unique_number_if_no_x(self):
+        # GIVEN
+        value = list("000000000000000000000000000000111011")
+
+        # WHEN
+        combinations = MaskV2._generate_combinations(value)
+
+        # THEN
+        assert_that(combinations, equal_to([59]))
+
+    def test_should_validate_first_example(self):
+        # GIVEN
+        value = list("000000000000000000000000000000X1101X")
+
+        # WHEN
+        combinations = MaskV2._generate_combinations(value)
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            combinations,
+            contains_inanyorder(26, 27, 58, 59)
+        )
+
+    def test_should_validate_second_example(self):
+        # GIVEN
+        value = list("00000000000000000000000000000001X0XX")
+
+        # WHEN
+        combinations = MaskV2._generate_combinations(value)
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            combinations,
+            contains_inanyorder(16, 17, 18, 19, 24, 25, 26, 27)
+        )
+
+
+class TestMaskV2:
+    def test_should_apply_first_example(self):
+        # GIVEN
+        mask = MaskV2.parse("000000000000000000000000000000X1001X")
+
+        # WHEN
+        results = mask.apply(42)
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            results,
+            contains_inanyorder(26, 27, 58, 59)
+        )
+
+    def test_should_apply_second(self):
+        # GIVEN
+        mask = MaskV2.parse("00000000000000000000000000000000X0XX")
+
+        # WHEN
+        results = mask.apply(26)
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            results,
+            contains_inanyorder(16, 17, 18, 19, 24, 25, 26, 27)
+        )
+
+
+class TestExecuteProgramV2:
+    def test_should_validate_first_example(self):
+        # GIVEN
+        raw_program = """mask = 000000000000000000000000000000X1001X
+mem[42] = 100
+mask = 00000000000000000000000000000000X0XX
+mem[26] = 1
+"""
+
+        # WHEN
+        mem = execute_program_v2(raw_program.splitlines(keepends=True))
+
+        # THEN
+        assert_that(sum_memory(mem), equal_to(208))
