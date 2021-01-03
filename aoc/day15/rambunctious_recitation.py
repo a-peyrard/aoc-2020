@@ -40,31 +40,15 @@ Given your starting numbers, what will be the 2020th number spoken?
 
 """
 import time
-from collections import defaultdict
-from typing import List, Tuple, Optional, DefaultDict
+from typing import List, Dict, Tuple
 
 
-class History:
-    def __init__(self):
-        self._last_seen: Optional[int] = None
-        self._before_last_seen: Optional[int] = None
-
-    def seen_at(self, turn_idx) -> None:
-        self._before_last_seen = self._last_seen
-        self._last_seen = turn_idx
-
-    def time_since_last_seen(self) -> int:
-        if self._before_last_seen is None:
-            return 0
-        else:
-            return self._last_seen - self._before_last_seen
-
-
-def _init(starting_numbers: List[int]) -> Tuple[int, int, DefaultDict[int, History]]:
-    memo = defaultdict(lambda: History())
+def _init(starting_numbers: List[int]) -> Tuple[int, int, Dict[int, int]]:
+    memo = {}
     last_spoken_number = 0
     for idx, starting_number in enumerate(starting_numbers):
-        memo[starting_number].seen_at(idx + 1)
+        if idx > 0:
+            memo[last_spoken_number] = idx
         last_spoken_number = starting_number
 
     return last_spoken_number, len(starting_numbers), memo
@@ -76,8 +60,13 @@ def play_game(starting_numbers: List[int], number_of_turns: int) -> int:
 
     last_spoken_number, last_turn, memo = _init(starting_numbers)
     for turn_index in range(last_turn + 1, number_of_turns + 1):
-        last_spoken_number = memo[last_spoken_number].time_since_last_seen()
-        memo[last_spoken_number].seen_at(turn_index)
+        if last_spoken_number not in memo:
+            spoken_number = 0
+        else:
+            spoken_number = turn_index - 1 - memo[last_spoken_number]
+
+        memo[last_spoken_number] = turn_index - 1
+        last_spoken_number = spoken_number
 
     return last_spoken_number
 
