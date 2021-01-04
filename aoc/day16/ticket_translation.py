@@ -46,11 +46,37 @@ It doesn't matter which position corresponds to which field; you can identify in
    55 + 12 = 71.
 Consider the validity of the nearby tickets you scanned. What is your ticket scanning error rate?
 
+--- Part Two ---
+
+Now that you've identified which tickets contain invalid values, discard those tickets entirely. Use the remaining valid
+ tickets to determine which field is which.
+Using the valid ranges for each field, determine what order the fields appear on the tickets. The order is consistent
+between all tickets: if seat is the third field, it is the third field on every ticket, including your ticket.
+For example, suppose you have the following notes:
+class: 0-1 or 4-19
+row: 0-5 or 8-19
+seat: 0-13 or 16-19
+
+your ticket:
+11,12,13
+
+nearby tickets:
+3,9,18
+15,1,5
+5,14,9
+Based on the nearby tickets in the above example, the first position must be row, the second position must be class, and
+ the third position must be seat; you can conclude that in your ticket, class is 12, row is 11, and seat is 13.
+Once you work out which field is which, look for the six fields on your ticket that start with the word departure. What
+do you get if you multiply those six values together?
+
+
 """
 import os
 import re
 import time
-from typing import List, Tuple, NamedTuple
+from functools import reduce
+from operator import mul
+from typing import List, Tuple, NamedTuple, Dict, Iterable, Set
 
 CONSTRAINT_REGEX = re.compile(r"^(.*?): (\d+)-(\d+) or (\d+)-(\d+)$")
 
@@ -136,12 +162,101 @@ def _check_field_for_constraint(field: int, constraint: Constraint) -> bool:
     return any(map(lambda r: r.in_range(field), constraint.ranges))
 
 
+def _find_constraint_per_field(valid_tickets: Iterable[Ticket],
+                               constraints: List[Constraint]) -> List[str]:
+
+    matching_constraints_per_field = [set((c.name for c in constraints))] * len(constraints)
+    for ticket in valid_tickets:
+        _analyze_ticket(ticket, constraints, matching_constraints_per_field)
+
+    return _reduce_constraints_per_fields(matching_constraints_per_field)
+
+
+def _reduce_constraints_per_fields(constraints_per_field: List[Set[str]]) -> List[str]:
+    number_reduced = 1
+    while number_reduced:
+        number_reduced = 0
+        mono_constraints = [
+            next(iter(constraints))
+            for constraints in constraints_per_field
+            if len(constraints) == 1
+        ]
+        if len(mono_constraints):
+            for constraints in constraints_per_field:
+                if len(constraints) > 1:
+                    for constraint in mono_constraints:
+                        if constraint in constraints:
+                            constraints.remove(constraint)
+                            number_reduced += 1
+
+    result = []
+    for idx, constraints in enumerate(constraints_per_field):
+        if len(constraints) != 1:
+            raise ValueError(f"field {idx} is not having an unique constraint, but {constraints}")
+        result.append(constraints.pop())
+
+    return result
+
+
+def _analyze_ticket(ticket: Ticket,
+                    constraints: List[Constraint],
+                    matching_constraints_per_field: List[Set[str]]) -> None:
+
+    for idx, field in enumerate(ticket):
+        matching_constraints = set((c.name for c in _analyze_matching_constraints(field, constraints)))
+        matching_constraints_per_field[idx] = matching_constraints_per_field[idx] & matching_constraints
+
+
+def _analyze_matching_constraints(field: int,
+                                  constraints: List[Constraint]) -> Iterable[Constraint]:
+    return filter(lambda c: _check_field_for_constraint(field, c), constraints)
+
+
+def _map_field_in_ticket(ticket: Ticket, constraints: List[str]) -> Dict[str, int]:
+    return {
+        constraints[idx]: field
+        for idx, field in enumerate(ticket)
+    }
+
+
+def map_fields_for_my_ticket(my_ticket: Ticket,
+                             other_tickets: List[Ticket],
+                             constraints: List[Constraint]) -> Dict[str, int]:
+    def _is_ticket_valid(ticket: Ticket) -> bool:
+        return len(_get_errors_in_ticket(ticket, constraints)) == 0
+
+    ordered_constraints = _find_constraint_per_field(
+        valid_tickets=filter(_is_ticket_valid, other_tickets),
+        constraints=constraints
+    )
+    return _map_field_in_ticket(my_ticket, ordered_constraints)
+
+
+def solve_part2(named_fields: Dict[str, int]) -> int:
+    return reduce(
+        mul,
+        (
+            field
+            for name, field in named_fields.items()
+            if name.startswith("departure")
+        ),
+        1
+    )
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
-        _constraints, _, _other_tickets = _parse(list(file.readlines()))
+        _constraints, _my_ticket, _other_tickets = _parse(list(file.readlines()))
 
         start = time.time()
         solution_part1 = add_errors(_other_tickets, _constraints)
         end = time.time()
         print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
         assert solution_part1 == 25972
+
+        start = time.time()
+        _named_fields = map_fields_for_my_ticket(_my_ticket, _other_tickets, _constraints)
+        solution_part2 = solve_part2(_named_fields)
+        end = time.time()
+        print(f"solution (part2): {solution_part2} in {(end - start) * 1000}ms")
+        assert solution_part2 == 622670335901

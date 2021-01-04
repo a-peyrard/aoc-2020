@@ -1,6 +1,6 @@
 from hamcrest import equal_to, assert_that
 
-from aoc.day16.ticket_translation import _parse, Range, Constraint, add_errors
+from aoc.day16.ticket_translation import _parse, Range, Constraint, add_errors, map_fields_for_my_ticket
 
 
 class TestParse:
@@ -70,3 +70,35 @@ class TestAddErrors:
 
         # THEN
         assert_that(errors, equal_to(71))
+
+
+class TestMapFieldsForMyTicket:
+    def test_should_validate_given_example(self):
+        # GIVEN
+        raw = """class: 0-1 or 4-19
+row: 0-5 or 8-19
+seat: 0-13 or 16-19
+
+your ticket:
+11,12,13
+
+nearby tickets:
+3,9,18
+15,1,5
+5,14,9"""
+        constraints, my_ticket, other_tickets = \
+            _parse(raw.splitlines(keepends=True))
+
+        # WHEN
+        fields = map_fields_for_my_ticket(
+            my_ticket,
+            other_tickets,
+            constraints
+        )
+
+        # THEN
+        assert_that(fields, equal_to({
+            "class": 12,
+            "row": 11,
+            "seat": 13
+        }))
