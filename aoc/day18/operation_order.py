@@ -36,11 +36,33 @@ Here are a few more examples:
 Before you can help with the homework, you need to understand it yourself. Evaluate the expression on each line of the
 homework; what is the sum of the resulting values?
 
+--- Part Two ---
+
+You manage to answer the child's questions and they finish part 1 of their homework, but get stuck when they reach the
+next section: advanced math.
+Now, addition and multiplication have different precedence levels, but they're not the ones you're familiar with.
+Instead, addition is evaluated before multiplication.
+For example, the steps to evaluate the expression 1 + 2 * 3 + 4 * 5 + 6 are now as follows:
+1 + 2 * 3 + 4 * 5 + 6
+  3   * 3 + 4 * 5 + 6
+  3   *   7   * 5 + 6
+  3   *   7   *  11
+     21       *  11
+         231
+Here are the other examples from above:
+    1 + (2 * 3) + (4 * (5 + 6)) still becomes 51.
+    2 * 3 + (4 * 5) becomes 46.
+    5 + (8 * 3 + 9 + 3 * 4 * 3) becomes 1445.
+    5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4)) becomes 669060.
+    ((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2 becomes 23340.
+What do you get if you add up the results of evaluating the homework problems using these new rules?
+
+
 """
 import os
 import time
 from enum import Enum
-from typing import List, NamedTuple, Union, Set, Tuple
+from typing import List, NamedTuple, Union, Set, Tuple, Optional
 
 
 class MyEnum(Enum):
@@ -80,19 +102,23 @@ class OperatorNode(NamedTuple):
 EquationTree = Union[OperatorNode, ValueNode]
 
 
-def solve_equation(equation: str) -> int:
+def solve_equation(equation: str, priority: Optional[Operator] = None) -> int:
     return _solve_equation_tree(
         _parse_equation(
-            _tokenize(equation)
+            _tokenize(equation),
+            priority
         )
     )
 
 
-def _parse_equation(tokens: List[str]) -> EquationTree:
+def _parse_equation(tokens: List[str],
+                    priority: Optional[Operator] = None) -> EquationTree:
     index = 0
     current = None
+    current_is_protected = False
     operator = None
     while index < len(tokens):
+        next_current_will_be_protected = False
         token = tokens[index]
         if isinstance(token, Operator):
             operator = token
@@ -101,22 +127,45 @@ def _parse_equation(tokens: List[str]) -> EquationTree:
                 node = ValueNode(token)
             elif token == Ponctuation.OPEN_BRACKET:
                 index, sub_list = _extract_sub_equation(index + 1, tokens)
-                node = _parse_equation(sub_list)
+                node = _parse_equation(sub_list, priority)
+                next_current_will_be_protected = True
             else:
                 raise ValueError(f"Unexpected token: {token}")
 
             if current:
-                current = OperatorNode(
-                    operator=operator,
-                    left=current,
-                    right=node
-                )
+                current_operator = _get_node_operator(current)
+                if not current_is_protected and priority and current_operator and \
+                        operator == priority and current_operator != priority:
+                    current = OperatorNode(
+                        operator=current_operator,
+                        left=current.left,
+                        right=OperatorNode(
+                            operator=operator,
+                            left=current.right,
+                            right=node
+                        )
+                    )
+                else:
+                    current = OperatorNode(
+                        operator=operator,
+                        left=current,
+                        right=node
+                    )
+
+                current_is_protected = False
             else:
                 current = node
+                current_is_protected = next_current_will_be_protected
 
         index += 1
 
     return current
+
+
+def _get_node_operator(node: EquationTree) -> Optional[Operator]:
+    if isinstance(node, OperatorNode):
+        return node.operator
+    return None
 
 
 def _extract_sub_equation(index: int, tokens: List[str]) -> Tuple[int, List[str]]:
@@ -182,6 +231,13 @@ def solve_part1(equations: List[str]) -> int:
     return sum(map(solve_equation, equations))
 
 
+def solve_part2(equations: List[str]) -> int:
+    return sum(map(
+        lambda e: solve_equation(equation=e, priority=Operator.ADD),
+        equations)
+    )
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
         _equations = list(file.readlines())
@@ -191,3 +247,9 @@ if __name__ == "__main__":
         end = time.time()
         print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
         assert solution_part1 == 23507031841020
+
+        start = time.time()
+        solution_part2 = solve_part2(_equations)
+        end = time.time()
+        print(f"solution (part2): {solution_part2} in {(end - start) * 1000}ms")
+        assert solution_part2 == 218621700997826
