@@ -1,6 +1,6 @@
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
 
-from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse
+from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1
 from aoc.util.num import binary_to_string
 
 
@@ -317,3 +317,22 @@ class TestTileFlip:
                 )
             )
         )
+
+
+class TestSolvePart1:
+    def test_should_multiply_corner_tile_ids(self):
+        # GIVEN
+        # 1951    2311    3079
+        # 2729    1427    2473
+        # 2971    1489    1171
+        jigsaw = [
+            [1951, 2311, 3079],
+            [2729, 1427, 2473],
+            [2971, 1489, 1171]
+        ]
+
+        # WHEN
+        res = solve_part1(jigsaw)
+
+        # THEN
+        assert_that(res, equal_to(20899048083289))

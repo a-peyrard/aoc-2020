@@ -172,7 +172,9 @@ Assemble the tiles into an image. What do you get if you multiply together the I
 """
 import os
 import re
+import time
 from enum import Enum
+from math import prod
 from typing import List, Tuple, Iterable, NamedTuple
 
 from aoc.util.text import generate_paragraphs
@@ -297,7 +299,7 @@ def _reverse_binary(num: int, size: int) -> int:
     return res
 
 
-def _parse(lines: List[str]) -> List[Tile]:
+def _parse(lines: Iterable[str]) -> List[Tile]:
     return [
         Tile.parse(raw_tile)
         for raw_tile in generate_paragraphs(lines)
@@ -316,19 +318,28 @@ def _parse_to_binary(values: Iterable[str]) -> int:
     return int("".join(map(lambda c: "1" if c == "#" else "0", values)), 2)
 
 
+def do_jigsaw(tiles: List[Tile]) -> List[List[int]]:
+    return []
+
+
+def solve_part1(jigsaw: List[List[int]]) -> int:
+    if len(jigsaw) < 2 or len(jigsaw[0]) < 2:
+        raise ValueError(f"Not enough pieces in the jigsaw: {jigsaw}")
+
+    return prod((
+        jigsaw[0][0],
+        jigsaw[0][len(jigsaw[0]) - 1],
+        jigsaw[len(jigsaw) - 1][0],
+        jigsaw[len(jigsaw) - 1][len(jigsaw[0]) - 1]
+    ))
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
-        pass
-        # _rules, _messages = _parse(list(file.readlines()))
-        #
-        # start = time.time()
-        # solution_part1 = solve_part1(_messages, _rules, rule_idx=0)
-        # end = time.time()
-        # print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
-        # assert solution_part1 == 102
-        #
-        # start = time.time()
-        # solution_part2 = solve_part2(_messages, _rules, rule_idx=0)
-        # end = time.time()
-        # print(f"solution (part2): {solution_part2} in {(end - start) * 1000}ms")
-        # assert solution_part2 == 318
+        _tiles = _parse(file.readlines())
+
+        start = time.time()
+        solution_part1 = solve_part1(do_jigsaw(_tiles))
+        end = time.time()
+        print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
+        assert solution_part1 == 102
