@@ -186,6 +186,39 @@ class Direction(Enum):
 
 
 class Tile(NamedTuple):
+    @staticmethod
+    def parse(lines: List[str]) -> 'Tile':
+        # Tile 2311:
+        # ..##.#..#.
+        # ##..#.....
+        # #...##..#.
+        # ####.#...#
+        # ##.##.###.
+        # ##...#.###
+        # .#.#.#..##
+        # ..#....#..
+        # ###...#.#.
+        # ..###..###
+        id_line, *tile_lines = lines
+        tile_id = _parse_tile_id(id_line)
+        top = _parse_to_binary(tile_lines[0])
+        right = _parse_to_binary([
+            line[9]
+            for line in tile_lines
+        ])
+        bottom = _parse_to_binary(tile_lines[9])
+        left = _parse_to_binary([
+            line[0]
+            for line in tile_lines
+        ])
+        return Tile(
+            id=tile_id,
+            top=top,
+            right=right,
+            bottom=bottom,
+            left=left
+        )
+
     id: int
     top: int
     right: int
@@ -213,7 +246,13 @@ class Tile(NamedTuple):
         )
 
     def _rotate_90(self) -> 'Tile':
-        pass  # fixme
+        return Tile(
+            id=self.id,
+            right=self.top,
+            bottom=_reverse_binary(self.right, size=10),
+            left=self.bottom,
+            top=_reverse_binary(self.left, size=10),
+        )
 
     def flip(self) -> Tuple['Tile', 'Tile', 'Tile']:
         flip_x = self._flip_x()
@@ -226,53 +265,43 @@ class Tile(NamedTuple):
         )
 
     def _flip_x(self) -> 'Tile':
-        pass  # fixme
+        return Tile(
+            id=self.id,
+            top=_reverse_binary(self.top, size=10),
+            right=self.left,
+            bottom=_reverse_binary(self.bottom, size=10),
+            left=self.right,
+        )
 
     def _flip_y(self) -> 'Tile':
-        pass  # fixme
+        return Tile(
+            id=self.id,
+            top=self.bottom,
+            right=_reverse_binary(self.right, size=10),
+            bottom=self.top,
+            left=_reverse_binary(self.left, size=10),
+        )
 
 
 TILE_REGEX = re.compile(r"Tile (\d+):")
 
 
+def _reverse_binary(num: int, size: int) -> int:
+    res = 0
+    for _ in range(size):
+        res <<= 1
+        if num & 1:
+            res |= 1
+        num >>= 1
+
+    return res
+
+
 def _parse(lines: List[str]) -> List[Tile]:
     return [
-        _parse_tile(raw_tile)
+        Tile.parse(raw_tile)
         for raw_tile in generate_paragraphs(lines)
     ]
-
-
-def _parse_tile(lines: List[str]) -> Tile:
-    # Tile 2311:
-    # ..##.#..#.
-    # ##..#.....
-    # #...##..#.
-    # ####.#...#
-    # ##.##.###.
-    # ##...#.###
-    # .#.#.#..##
-    # ..#....#..
-    # ###...#.#.
-    # ..###..###
-    id_line, *tile_lines = lines
-    tile_id = _parse_tile_id(id_line)
-    top = _parse_to_binary(tile_lines[0])
-    right = _parse_to_binary([
-        line[9]
-        for line in tile_lines
-    ])
-    bottom = _parse_to_binary(tile_lines[9])
-    left = _parse_to_binary([
-        line[0]
-        for line in tile_lines
-    ])
-    return Tile(
-        id=tile_id,
-        top=top,
-        right=right,
-        bottom=bottom,
-        left=left
-    )
 
 
 def _parse_tile_id(line: str) -> int:
