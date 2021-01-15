@@ -169,6 +169,105 @@ To check that you've assembled the image correctly, multiply the IDs of the four
 with the assembled tiles from the example above, you get 1951 * 3079 * 2971 * 1171 = 20899048083289.
 Assemble the tiles into an image. What do you get if you multiply together the IDs of the four corner tiles?
 
+--- Part Two ---
+
+Now, you're ready to check the image for sea monsters.
+The borders of each tile are not part of the actual image; start by removing them.
+In the example above, the tiles become:
+
+.#.#..#. ##...#.# #..#####
+###....# .#....#. .#......
+##.##.## #.#.#..# #####...
+###.#### #...#.## ###.#..#
+##.#.... #.##.### #...#.##
+...##### ###.#... .#####.#
+....#..# ...##..# .#.###..
+.####... #..#.... .#......
+
+#..#.##. .#..###. #.##....
+#.####.. #.####.# .#.###..
+###.#.#. ..#.#### ##.#..##
+#.####.. ..##..## ######.#
+##..##.# ...#...# .#.#.#..
+...#..#. .#.#.##. .###.###
+.#.#.... #.##.#.. .###.##.
+###.#... #..#.##. ######..
+
+.#.#.### .##.##.# ..#.##..
+.####.## #.#...## #.#..#.#
+..#.#..# ..#.#.#. ####.###
+#..####. ..#.#.#. ###.###.
+#####..# ####...# ##....##
+#.##..#. .#...#.. ####...#
+.#.###.. ##..##.. ####.##.
+...###.. .##...#. ..#..###
+
+Remove the gaps to form the actual image:
+
+.#.#..#.##...#.##..#####
+###....#.#....#..#......
+##.##.###.#.#..######...
+###.#####...#.#####.#..#
+##.#....#.##.####...#.##
+...########.#....#####.#
+....#..#...##..#.#.###..
+.####...#..#.....#......
+#..#.##..#..###.#.##....
+#.####..#.####.#.#.###..
+###.#.#...#.######.#..##
+#.####....##..########.#
+##..##.#...#...#.#.#.#..
+...#..#..#.#.##..###.###
+.#.#....#.##.#...###.##.
+###.#...#..#.##.######..
+.#.#.###.##.##.#..#.##..
+.####.###.#...###.#..#.#
+..#.#..#..#.#.#.####.###
+#..####...#.#.#.###.###.
+#####..#####...###....##
+#.##..#..#...#..####...#
+.#.###..##..##..####.##.
+...###...##...#...#..###
+
+Now, you're ready to search for sea monsters! Because your image is monochrome, a sea monster will look like this:
+
+                  #
+#    ##    ##    ###
+ #  #  #  #  #  #
+
+When looking for this pattern in the image, the spaces can be anything; only the # need to match. Also, you might need
+to rotate or flip your image before it's oriented correctly to find sea monsters. In the above image, after flipping and
+ rotating it to the appropriate orientation, there are two sea monsters (marked with O):
+
+.####...#####..#...###..
+#####..#..#.#.####..#.#.
+.#.#...#.###...#.##.O#..
+#.O.##.OO#.#.OO.##.OOO##
+..#O.#O#.O##O..O.#O##.##
+...#.#..##.##...#..#..##
+#.##.#..#.#..#..##.#.#..
+.###.##.....#...###.#...
+#.####.#.#....##.#..#.#.
+##...#..#....#..#...####
+..#.##...###..#.#####..#
+....#.##.#.#####....#...
+..##.##.###.....#.##..#.
+#...#...###..####....##.
+.#.##...#.##.#.#.###...#
+#.###.#..####...##..#...
+#.###...#.##...#.##O###.
+.O##.#OO.###OO##..OOO##.
+..O#.O..O..O.#O##O##.###
+#.#..##.########..#..##.
+#.#####..#.#...##..#....
+#....##..#.#########..##
+#...#.....#..##...###.##
+#..###....##.#...##.##.#
+
+Determine how rough the waters are in the sea monsters' habitat by counting the number of # that are not part of a sea
+monster. In the above example, the habitat's water roughness is 273.
+How many # are not part of a sea monster?
+
 """
 import os
 import re
@@ -311,20 +410,20 @@ def _parse_to_binary(values: Iterable[str]) -> int:
     return int("".join(map(lambda c: "1" if c == "#" else "0", values)), 2)
 
 
-def _match_tile_against_peers(tile_index: int,
-                              tiles: List[Tile],
+def _match_tile_against_peers(tile_id,
                               tiles_by_id: Dict[int, Tile]) -> List[Tuple[Tile, Direction, Tile]]:
-    variants_to_match = [tiles[tile_index]]
+    the_tile = tiles_by_id[tile_id]
+    variants_to_match = [the_tile]
     remaining_tile_ids = set((
         tile.id
-        for idx, tile in enumerate(tiles)
-        if idx != tile_index
+        for tid, tile in tiles_by_id.items()
+        if tile_id != tid
     ))
 
     matches = _get_all_matches(variants_to_match, remaining_tile_ids, tiles_by_id)
     DEBUG and print(
         f"""
-== for tile #{tiles[tile_index]}
+== for tile #{the_tile}
 matches:
 """ + "\n".join(map(str, matches))
     )
@@ -371,22 +470,28 @@ def _get_all_matches_for_tile_from_list(tile_to_match: Tile,
     return matches
 
 
+def _find_corners(tiles_by_id: Dict[int, Tile]):
+    corners = []
+    for tile_id in tiles_by_id.keys():
+        matches = _match_tile_against_peers(tile_id, tiles_by_id)
+        if len(set((direction for _, direction, _ in matches))) == 2:
+            corners.append(tile_id)
+
+    DEBUG and print(f"\n\nPOSSIBLE CORNERS = {corners}")
+
+    if len(corners) != 4:
+        raise ValueError(f"Unable to find 4 corners, but {corners}")
+
+    return corners
+
+
 def solve_part1(tiles: List[Tile]) -> int:
     tiles_by_id = {
         tile.id: tile
         for tile in tiles
     }
 
-    corners = []
-    for index in range(len(tiles)):
-        matches = _match_tile_against_peers(index, tiles, tiles_by_id)
-        if len(set((direction for _, direction, _ in matches))) == 2:
-            corners.append(tiles[index].id)
-
-    DEBUG and print(f"\n\nPOSSIBLE CORNERS = {corners}")
-
-    if len(corners) != 4:
-        raise ValueError(f"Unable to find 4 corners, but {corners}")
+    corners = _find_corners(tiles_by_id)
 
     return prod(corners)
 
