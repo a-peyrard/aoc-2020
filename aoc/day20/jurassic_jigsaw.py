@@ -256,26 +256,7 @@ class Tile(NamedTuple):
             top=_reverse_binary(self.left, size=10),
         )
 
-    def flip(self) -> Tuple['Tile', 'Tile', 'Tile']:
-        flip_x = self._flip_x()
-        flip_y = self._flip_y()
-        flip_xy = flip_x._flip_y()
-        return (
-            flip_x,
-            flip_y,
-            flip_xy
-        )
-
-    def _flip_x(self) -> 'Tile':
-        return Tile(
-            id=self.id,
-            top=_reverse_binary(self.top, size=10),
-            right=self.left,
-            bottom=_reverse_binary(self.bottom, size=10),
-            left=self.right,
-        )
-
-    def _flip_y(self) -> 'Tile':
+    def flip(self) -> 'Tile':
         return Tile(
             id=self.id,
             top=self.bottom,

@@ -202,7 +202,7 @@ class TestTileRotate:
 
 
 class TestTileFlip:
-    def test_should_flip_on_x_axis(self):
+    def test_should_flip(self):
         # GIVEN
         a_tile = Tile.parse(
             """Tile 2729:
@@ -219,24 +219,23 @@ class TestTileFlip:
         )
 
         # WHEN
-        flip_x = a_tile._flip_x()
+        flip_y = a_tile.flip()
 
         # THEN
         # noinspection PyTypeChecker
         assert_that(
-            flip_x,
+            flip_y,
             equal_to(
                 Tile(
                     id=2729,
-                    top=int("1010101000", 2),
-                    right=int("0100001111", 2),
-                    bottom=int("0110001101", 2),
-                    left=int("1001000000", 2),
+                    top=int("1011000110", 2),
+                    right=int("0000001001", 2),
+                    bottom=int("0001010101", 2),
+                    left=int("1111000010", 2),
                 )
             )
         )
 
-    def test_should_flip_on_y_axis(self):
         # GIVEN
         a_tile = Tile.parse(
             """Tile 2729:
