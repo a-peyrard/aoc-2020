@@ -175,9 +175,12 @@ import re
 import time
 from enum import Enum
 from math import prod
-from typing import List, Tuple, Iterable, NamedTuple
+from typing import List, Tuple, Iterable, NamedTuple, Set, Dict
 
+from aoc.util.list import flat_map
 from aoc.util.text import generate_paragraphs
+
+DEBUG = False
 
 
 class Direction(Enum):
@@ -227,15 +230,17 @@ class Tile(NamedTuple):
     bottom: int
     left: int
 
-    def match(self, other: 'Tile') -> Direction:
+    def match(self, other: 'Tile') -> List[Direction]:
+        matches = []
         if self.top == other.bottom:
-            return Direction.TOP
+            matches.append(Direction.TOP)
         if self.right == other.left:
-            return Direction.RIGHT
+            matches.append(Direction.RIGHT)
         if self.bottom == other.top:
-            return Direction.BOTTOM
+            matches.append(Direction.BOTTOM)
         if self.left == other.right:
-            return Direction.LEFT
+            matches.append(Direction.LEFT)
+        return matches
 
     def rotate(self) -> Tuple['Tile', 'Tile', 'Tile']:
         rotation_90 = self._rotate_90()
@@ -264,6 +269,13 @@ class Tile(NamedTuple):
             bottom=self.top,
             left=_reverse_binary(self.left, size=10),
         )
+
+    def get_all_variants(self) -> List['Tile']:
+        flipped = self.flip()
+        tiles = [self, flipped]
+        tiles.extend(self.rotate())
+        tiles.extend(flipped.rotate())
+        return tiles
 
 
 TILE_REGEX = re.compile(r"Tile (\d+):")
@@ -299,20 +311,84 @@ def _parse_to_binary(values: Iterable[str]) -> int:
     return int("".join(map(lambda c: "1" if c == "#" else "0", values)), 2)
 
 
-def do_jigsaw(tiles: List[Tile]) -> List[List[int]]:
-    return []
-
-
-def solve_part1(jigsaw: List[List[int]]) -> int:
-    if len(jigsaw) < 2 or len(jigsaw[0]) < 2:
-        raise ValueError(f"Not enough pieces in the jigsaw: {jigsaw}")
-
-    return prod((
-        jigsaw[0][0],
-        jigsaw[0][len(jigsaw[0]) - 1],
-        jigsaw[len(jigsaw) - 1][0],
-        jigsaw[len(jigsaw) - 1][len(jigsaw[0]) - 1]
+def _match_tile_against_peers(tile_index: int,
+                              tiles: List[Tile],
+                              tiles_by_id: Dict[int, Tile]) -> List[Tuple[Tile, Direction, Tile]]:
+    variants_to_match = [tiles[tile_index]]
+    remaining_tile_ids = set((
+        tile.id
+        for idx, tile in enumerate(tiles)
+        if idx != tile_index
     ))
+
+    matches = _get_all_matches(variants_to_match, remaining_tile_ids, tiles_by_id)
+    DEBUG and print(
+        f"""
+== for tile #{tiles[tile_index]}
+matches:
+""" + "\n".join(map(str, matches))
+    )
+    return matches
+
+
+def _get_all_matches(tiles: List[Tile],
+                     available_tile_ids: Set[int],
+                     tiles_by_id: Dict[int, Tile]) -> List[Tuple[Tile, Direction, Tile]]:
+
+    matches: List[Tuple[Tile, Direction, Tile]] = []
+    for tile in tiles:
+        matches_for_tile = _get_all_matches_for_tile(tile, available_tile_ids, tiles_by_id)
+        for direction, matching_tile in matches_for_tile:
+            matches.append((tile, direction, matching_tile))
+
+    return matches
+
+
+def _get_all_matches_for_tile(tile: Tile,
+                              available_tile_ids: Set[int],
+                              tiles_by_id: Dict[int, Tile]) -> List[Tuple[Direction, Tile]]:
+
+    possibles_matches = flat_map(map(
+        lambda tile_id: tiles_by_id[tile_id].get_all_variants(),
+        available_tile_ids
+    ))
+    return _get_all_matches_for_tile_from_list(
+        tile,
+        possibles_matches
+    )
+
+
+def _get_all_matches_for_tile_from_list(tile_to_match: Tile,
+                                        tiles: List[Tile]) -> List[Tuple[Direction, Tile]]:
+    matches: List[Tuple[Direction, Tile]] = []
+    for tile in tiles:
+        matching_directions = tile_to_match.match(tile)
+        for matching_direction in matching_directions:
+            matches.append((matching_direction, tile))
+
+    False and DEBUG and print(f"\nfor tile {tile_to_match}, we have those matches:\n" + "\n".join(map(str, matches)))
+
+    return matches
+
+
+def solve_part1(tiles: List[Tile]) -> int:
+    tiles_by_id = {
+        tile.id: tile
+        for tile in tiles
+    }
+
+    corners = []
+    for index in range(len(tiles)):
+        matches = _match_tile_against_peers(index, tiles, tiles_by_id)
+        if len(set((direction for _, direction, _ in matches))) == 2:
+            corners.append(tiles[index].id)
+
+    DEBUG and print(f"\n\nPOSSIBLE CORNERS = {corners}")
+
+    if len(corners) != 4:
+        raise ValueError(f"Unable to find 4 corners, but {corners}")
+
+    return prod(corners)
 
 
 if __name__ == "__main__":
@@ -320,7 +396,7 @@ if __name__ == "__main__":
         _tiles = _parse(file.readlines())
 
         start = time.time()
-        solution_part1 = solve_part1(do_jigsaw(_tiles))
+        solution_part1 = solve_part1(_tiles)
         end = time.time()
         print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
-        assert solution_part1 == 102
+        assert solution_part1 == 19955159604613

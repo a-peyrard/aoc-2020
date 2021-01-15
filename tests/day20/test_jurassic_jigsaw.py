@@ -1,6 +1,6 @@
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
 
-from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1
+from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction
 from aoc.util.num import binary_to_string
 
 
@@ -86,6 +86,48 @@ Tile 2473:
                     left=int("1111000110", 2)
                 )
             )
+        )
+
+
+class TestTileMatch:
+    def test_should_match_with_270_rotation(self):
+        # GIVEN
+        tile_3079 = Tile.parse("""Tile 3079:
+#.#.#####.
+.#..######
+..#.......
+######....
+####.#..#.
+.#...#.##.
+#.#####.##
+..#.###...
+..#.......
+..#.###...""".splitlines())
+        tile_2473 = Tile.parse("""Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.""".splitlines())
+        tile_2473_flip_then_rotate270 = tile_2473.flip()\
+            ._rotate_90()\
+            ._rotate_90()\
+            ._rotate_90()
+
+        # WHEN
+        matches = tile_3079.match(tile_2473_flip_then_rotate270)
+
+        # THEN
+        assert_that(
+            matches,
+            equal_to([
+                Direction.BOTTOM
+            ])
         )
 
 
@@ -236,102 +278,122 @@ class TestTileFlip:
             )
         )
 
-        # GIVEN
-        a_tile = Tile.parse(
-            """Tile 2729:
-...#.#.#.#
-####.#....
-..#.#.....
-....#..#.#
-.##..##.#.
-.#.####...
-####.#.#..
-##.####...
-##..#.##..
-#.##...##.""".splitlines()
-        )
-
-        # WHEN
-        flip_y = a_tile._flip_y()
-
-        # THEN
-        # noinspection PyTypeChecker
-        assert_that(
-            flip_y,
-            equal_to(
-                Tile(
-                    id=2729,
-                    top=int("1011000110", 2),
-                    right=int("0000001001", 2),
-                    bottom=int("0001010101", 2),
-                    left=int("1111000010", 2),
-                )
-            )
-        )
-
-    def test_should_flip(self):
-        # GIVEN
-        a_tile = Tile.parse(
-            """Tile 2729:
-...#.#.#.#
-####.#....
-..#.#.....
-....#..#.#
-.##..##.#.
-.#.####...
-####.#.#..
-##.####...
-##..#.##..
-#.##...##.""".splitlines()
-        )
-
-        # WHEN
-        flips = a_tile.flip()
-
-        # THEN
-        # noinspection PyTypeChecker
-        assert_that(
-            flips,
-            contains_inanyorder(
-                Tile(
-                    id=2729,
-                    top=int("1010101000", 2),
-                    right=int("0100001111", 2),
-                    bottom=int("0110001101", 2),
-                    left=int("1001000000", 2),
-                ),
-                Tile(
-                    id=2729,
-                    top=int("1011000110", 2),
-                    right=int("0000001001", 2),
-                    bottom=int("0001010101", 2),
-                    left=int("1111000010", 2),
-                ),
-                Tile(
-                    id=2729,
-                    top=int("0110001101", 2),
-                    right=int("1111000010", 2),
-                    bottom=int("1010101000", 2),
-                    left=int("0000001001", 2),
-                )
-            )
-        )
-
 
 class TestSolvePart1:
-    def test_should_multiply_corner_tile_ids(self):
+    def test_should_do_the_given_jigsaw(self):
         # GIVEN
-        # 1951    2311    3079
-        # 2729    1427    2473
-        # 2971    1489    1171
-        jigsaw = [
-            [1951, 2311, 3079],
-            [2729, 1427, 2473],
-            [2971, 1489, 1171]
-        ]
+        raw_tiles = """Tile 2311:
+..##.#..#.
+##..#.....
+#...##..#.
+####.#...#
+##.##.###.
+##...#.###
+.#.#.#..##
+..#....#..
+###...#.#.
+..###..###
+
+Tile 1951:
+#.##...##.
+#.####...#
+.....#..##
+#...######
+.##.#....#
+.###.#####
+###.##.##.
+.###....#.
+..#.#..#.#
+#...##.#..
+
+Tile 1171:
+####...##.
+#..##.#..#
+##.#..#.#.
+.###.####.
+..###.####
+.##....##.
+.#...####.
+#.##.####.
+####..#...
+.....##...
+
+Tile 1427:
+###.##.#..
+.#..#.##..
+.#.##.#..#
+#.#.#.##.#
+....#...##
+...##..##.
+...#.#####
+.#.####.#.
+..#..###.#
+..##.#..#.
+
+Tile 1489:
+##.#.#....
+..##...#..
+.##..##...
+..#...#...
+#####...#.
+#..#.#.#.#
+...#.#.#..
+##.#...##.
+..##.##.##
+###.##.#..
+
+Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.
+
+Tile 2971:
+..#.#....#
+#...###...
+#.#.###...
+##.##..#..
+.#####..##
+.#..####.#
+#..#.#..#.
+..####.###
+..#.#.###.
+...#.#.#.#
+
+Tile 2729:
+...#.#.#.#
+####.#....
+..#.#.....
+....#..#.#
+.##..##.#.
+.#.####...
+####.#.#..
+##.####...
+##..#.##..
+#.##...##.
+
+Tile 3079:
+#.#.#####.
+.#..######
+..#.......
+######....
+####.#..#.
+.#...#.##.
+#.#####.##
+..#.###...
+..#.......
+..#.###..."""
 
         # WHEN
-        res = solve_part1(jigsaw)
+        res = solve_part1(
+            _parse(raw_tiles.splitlines(keepends=True))
+        )
 
         # THEN
         assert_that(res, equal_to(20899048083289))
