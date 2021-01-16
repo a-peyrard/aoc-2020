@@ -106,6 +106,107 @@ Tile 2473:
         )
 
 
+class TestTileDraw:
+    def test_should_draw_a_tile(self):
+        # GIVEN
+        a_tile = """Tile 2729:
+...#.#.#.#
+####.#....
+..#.#.....
+....#..#.#
+.##..##.#.
+.#.####...
+####.#.#..
+##.####...
+##..#.##..
+#.##...##."""
+        tile, = _parse(a_tile.splitlines(keepends=True))
+        _, flipped_rotation_180, _ = tile.flip().rotate()
+
+        # WHEN
+        drawing = flipped_rotation_180.draw()
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            drawing,
+            equal_to([
+                [".", ".", ".", "#", ".", "#", "#", "#"], 
+                [".", ".", ".", ".", "#", ".", "#", "."], 
+                [".", "#", ".", ".", "#", ".", ".", "."], 
+                ["#", ".", "#", "#", ".", ".", "#", "#"], 
+                [".", ".", "#", "#", "#", "#", ".", "#"], 
+                [".", "#", ".", "#", ".", "#", "#", "#"], 
+                [".", ".", "#", "#", "#", "#", ".", "#"], 
+                [".", "#", "#", ".", "#", ".", ".", "#"]
+            ])
+        )
+
+    def test_should_draw_a_flipped_r180_custom_tile(self):
+        # GIVEN
+        tile = Tile(
+            id=123,
+            top=123,
+            right=123,
+            bottom=123,
+            left=123,
+            inner_content=[
+                ["1", "2", "3", "4"],
+                ["5", "6", "7", "8"],
+                ["9", "10", "11", "12"],
+                ["13", "14", "15", "16"]
+            ]
+        )
+        _, flipped_rotation_180, _ = tile.flip().rotate()
+
+        # WHEN
+        drawing = flipped_rotation_180.draw()
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            drawing,
+            equal_to([
+                ["4", "3", "2", "1"],
+                ["8", "7", "6", "5"],
+                ["12", "11", "10", "9"],
+                ["16", "15", "14", "13"]
+            ])
+        )
+
+    def test_should_draw_a_flipped_custom_tile(self):
+        # GIVEN
+        tile = Tile(
+            id=123,
+            top=123,
+            right=123,
+            bottom=123,
+            left=123,
+            inner_content=[
+                ["1", "2", "3", "4"],
+                ["5", "6", "7", "8"],
+                ["9", "10", "11", "12"],
+                ["13", "14", "15", "16"]
+            ]
+        )
+        flipped = tile.flip()
+
+        # WHEN
+        drawing = flipped.draw()
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            drawing,
+            equal_to([
+                ["13", "14", "15", "16"],
+                ["9", "10", "11", "12"],
+                ["5", "6", "7", "8"],
+                ["1", "2", "3", "4"],
+            ])
+        )
+
+
 class TestTileMatch:
     def test_should_match_with_270_rotation(self):
         # GIVEN
@@ -516,6 +617,75 @@ class TestRotateMut:
                 [7, 4, 1],
                 [8, 5, 2],
                 [9, 6, 3]
+            ])
+        )
+
+    def test_should_rotate_a_bigger_matrix(self):
+        # GIVEN
+        matrix = [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16],
+        ]
+
+        # WHEN
+        res = _rotate_mut(matrix)
+
+        # THEN
+        assert_that(
+            res,
+            equal_to([
+                [13, 9, 5, 1],
+                [14, 10, 6, 2],
+                [15, 11, 7, 3],
+                [16, 12, 8, 4],
+            ])
+        )
+
+    def test_should_rotate_a_small_matrix(self):
+        # GIVEN
+        matrix = [
+            [1, 2],
+            [3, 4],
+        ]
+
+        # WHEN
+        res = _rotate_mut(matrix)
+
+        # THEN
+        assert_that(
+            res,
+            equal_to([
+                [3, 1],
+                [4, 2],
+            ])
+        )
+
+    def test_should_rotate_a_big_matrix(self):
+        # GIVEN
+        matrix = [
+            [1, 7, 13, 19, 25, 31],
+            [2, 8, 14, 20, 26, 32],
+            [3, 9, 15, 21, 27, 33],
+            [4, 10, 16, 22, 28, 34],
+            [5, 11, 17, 23, 29, 35],
+            [6, 12, 18, 24, 30, 36]
+        ]
+
+        # WHEN
+        res = _rotate_mut(matrix)
+
+        # THEN
+        assert_that(
+            res,
+            equal_to([
+                [6, 5, 4, 3, 2, 1],
+                [12, 11, 10, 9, 8, 7],
+                [18, 17, 16, 15, 14, 13],
+                [24, 23, 22, 21, 20, 19],
+                [30, 29, 28, 27, 26, 25],
+                [36, 35, 34, 33, 32, 31]
             ])
         )
 

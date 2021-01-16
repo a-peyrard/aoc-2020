@@ -1,8 +1,6 @@
-import re
-
 from hamcrest import assert_that, equal_to
 
-from aoc.day4.functional import compose
+from aoc.util.functional import compose
 from aoc.day4.validators import number_validator, or_validator, regex_extractor, exists_validator, in_validator, \
     regex_validator
 

@@ -276,6 +276,7 @@ from enum import Enum
 from math import prod
 from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar
 
+from aoc.util.functional import compose
 from aoc.util.list import flat_map
 from aoc.util.text import generate_paragraphs
 
@@ -394,6 +395,18 @@ class Tile(NamedTuple):
         tiles.extend(self.rotate())
         tiles.extend(flipped.rotate())
         return tiles
+
+    def draw(self):
+        drawing = [
+            row.copy()
+            for row in self.inner_content
+        ]
+        mutations = []
+        if self.flipped:
+            mutations.append(_flip_mut)
+        mutations.extend([_rotate_mut] * (self.rotation // 90))
+
+        return compose(*mutations)(drawing)
 
 
 TILE_REGEX = re.compile(r"Tile (\d+):")
@@ -534,25 +547,26 @@ def _rotate_mut(matrix: List[List[T]]) -> List[List[T]]:
     if height != width:
         raise ValueError(f"we need a square matrix in order to rotate")
 
-    # 0 X 0 0 0
-    # 0 0 0 0 X
+    # 0 a 0 0 0
+    # 0 0 0 0 b
     # 0 0 0 0 0
-    # X 0 0 0 0
-    # 0 0 0 X 0
+    # d 0 0 0 0
+    # 0 0 0 c 0
 
-    for row_idx in range(height // 2):
-        current_width = width - row_idx
-        for col_idx in range(row_idx, current_width - 1):
+    for inner_idx in range(height // 2):
+        current_width = width - (2 * inner_idx)
+        for idx in range(0, current_width - 1):
             # swap 4 cells in every pass of the loop
-            matrix[row_idx + col_idx][current_width - 1], \
-                matrix[height - 1 - row_idx][current_width - 1 - col_idx], \
-                matrix[height - 1 - row_idx - col_idx][row_idx], \
-                matrix[row_idx][col_idx] \
-                = \
-                matrix[row_idx][col_idx], \
-                matrix[row_idx + col_idx][current_width - 1], \
-                matrix[height - 1 - row_idx][current_width - 1 - col_idx], \
-                matrix[height - 1 - row_idx - col_idx][row_idx]
+            a = matrix[inner_idx][inner_idx + idx]
+            b = matrix[inner_idx + idx][inner_idx + current_width - 1]
+            c = matrix[height - 1 - inner_idx][inner_idx + current_width - 1 - idx]
+            d = matrix[height - 1 - inner_idx - idx][inner_idx]
+
+            matrix[inner_idx + idx][inner_idx + current_width - 1], \
+                matrix[height - 1 - inner_idx][inner_idx + current_width - 1 - idx], \
+                matrix[height - 1 - inner_idx - idx][inner_idx], \
+                matrix[inner_idx][inner_idx + idx] \
+                = a, b, c, d
 
     return matrix
 

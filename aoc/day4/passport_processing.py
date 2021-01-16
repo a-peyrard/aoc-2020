@@ -115,7 +115,7 @@ optional. In your batch file, how many passports are valid?
 import os
 from typing import Iterator, Set, Dict, List, Callable
 
-from aoc.day4.functional import compose
+from aoc.util.functional import compose
 from aoc.day4.validators import ValueValidator, number_validator, or_validator, regex_extractor, in_validator, \
     regex_validator
 from aoc.util.text import generate_paragraphs
