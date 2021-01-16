@@ -318,12 +318,19 @@ class Tile(NamedTuple):
             line[0]
             for line in tile_lines
         ])
+
+        inner_content = [
+            list(tile_lines[line_idx][1:-1])
+            for line_idx in range(1, 9)
+        ]
+
         return Tile(
             id=tile_id,
             top=top,
             right=right,
             bottom=bottom,
-            left=left
+            left=left,
+            inner_content=inner_content
         )
 
     id: int
@@ -331,6 +338,9 @@ class Tile(NamedTuple):
     right: int
     bottom: int
     left: int
+    inner_content: List[List[str]]
+    flipped: bool = False
+    rotation: int = 0
 
     def match(self, other: 'Tile') -> List[Direction]:
         matches = []
@@ -361,6 +371,9 @@ class Tile(NamedTuple):
             bottom=_reverse_binary(self.right, size=10),
             left=self.bottom,
             top=_reverse_binary(self.left, size=10),
+            inner_content=self.inner_content,
+            flipped=self.flipped,
+            rotation=self.rotation + 90
         )
 
     def flip(self) -> 'Tile':
@@ -370,6 +383,9 @@ class Tile(NamedTuple):
             right=_reverse_binary(self.right, size=10),
             bottom=self.top,
             left=_reverse_binary(self.left, size=10),
+            inner_content=self.inner_content,
+            flipped=not self.flipped,
+            rotation=self.rotation
         )
 
     def get_all_variants(self) -> List['Tile']:

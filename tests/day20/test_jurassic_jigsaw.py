@@ -1,3 +1,5 @@
+from unittest.mock import ANY
+
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
 
 from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners, _flip_mut, \
@@ -34,6 +36,18 @@ class TestParse:
                     right=int("1001000000", 2),
                     bottom=int("1011000110", 2),
                     left=int("0100001111", 2),
+                    inner_content=[
+                        ["#", "#", "#", ".", "#", ".", ".", "."],
+                        [".", "#", ".", "#", ".", ".", ".", "."],
+                        [".", ".", ".", "#", ".", ".", "#", "."],
+                        ["#", "#", ".", ".", "#", "#", ".", "#"],
+                        ["#", ".", "#", "#", "#", "#", ".", "."],
+                        ["#", "#", "#", ".", "#", ".", "#", "."],
+                        ["#", ".", "#", "#", "#", "#", ".", "."],
+                        ["#", ".", ".", "#", ".", "#", "#", "."],
+                    ],
+                    flipped=False,
+                    rotation=0
                 )
             )
         )
@@ -77,14 +91,16 @@ Tile 2473:
                     top=int("0001010101", 2),
                     right=int("1001000000", 2),
                     bottom=int("1011000110", 2),
-                    left=int("0100001111", 2)
+                    left=int("0100001111", 2),
+                    inner_content=ANY
                 ),
                 Tile(
                     id=2473,
                     top=int("1000011110", 2),
                     right=int("0001110100", 2),
                     bottom=int("0011101010", 2),
-                    left=int("1111000110", 2)
+                    left=int("1111000110", 2),
+                    inner_content=ANY
                 )
             )
         )
@@ -191,6 +207,9 @@ class TestTileRotate:
                     right=int("0001010101", 2),
                     bottom=int("0000001001", 2),
                     left=int("1011000110", 2),
+                    inner_content=ANY,
+                    flipped=False,
+                    rotation=90
                 )
             )
         )
@@ -225,6 +244,9 @@ class TestTileRotate:
                     right=int("0001010101", 2),
                     bottom=int("0000001001", 2),
                     left=int("1011000110", 2),
+                    inner_content=ANY,
+                    flipped=False,
+                    rotation=90
                 ),
                 Tile(
                     id=2729,
@@ -232,6 +254,9 @@ class TestTileRotate:
                     right=int("1111000010", 2),
                     bottom=int("1010101000", 2),
                     left=int("0000001001", 2),
+                    inner_content=ANY,
+                    flipped=False,
+                    rotation=180
                 ),
                 Tile(
                     id=2729,
@@ -239,6 +264,9 @@ class TestTileRotate:
                     right=int("0110001101", 2),
                     bottom=int("0100001111", 2),
                     left=int("1010101000", 2),
+                    inner_content=ANY,
+                    flipped=False,
+                    rotation=270
                 )
             )
         )
@@ -275,6 +303,9 @@ class TestTileFlip:
                     right=int("0000001001", 2),
                     bottom=int("0001010101", 2),
                     left=int("1111000010", 2),
+                    inner_content=ANY,
+                    flipped=True,
+                    rotation=0
                 )
             )
         )
