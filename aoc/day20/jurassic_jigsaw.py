@@ -274,12 +274,15 @@ import re
 import time
 from enum import Enum
 from math import prod
-from typing import List, Tuple, Iterable, NamedTuple, Set, Dict
+from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar
 
 from aoc.util.list import flat_map
 from aoc.util.text import generate_paragraphs
 
 DEBUG = False
+
+
+T = TypeVar('T')
 
 
 class Direction(Enum):
@@ -494,6 +497,48 @@ def solve_part1(tiles: List[Tile]) -> int:
     corners = _find_corners(tiles_by_id)
 
     return prod(corners)
+
+
+def _flip_mut(matrix: List[List[T]]) -> List[List[T]]:
+    height = len(matrix)
+    width = len(matrix[0])
+
+    for row_idx in range(height // 2):
+        target_row_idx = height - 1 - row_idx
+        for col_idx in range(width):
+            matrix[target_row_idx][col_idx], matrix[row_idx][col_idx] = \
+                matrix[row_idx][col_idx], matrix[target_row_idx][col_idx]
+
+    return matrix
+
+
+def _rotate_mut(matrix: List[List[T]]) -> List[List[T]]:
+    height = len(matrix)
+    width = len(matrix[0])
+    if height != width:
+        raise ValueError(f"we need a square matrix in order to rotate")
+
+    # 0 X 0 0 0
+    # 0 0 0 0 X
+    # 0 0 0 0 0
+    # X 0 0 0 0
+    # 0 0 0 X 0
+
+    for row_idx in range(height // 2):
+        current_width = width - row_idx
+        for col_idx in range(row_idx, current_width - 1):
+            # swap 4 cells in every pass of the loop
+            matrix[row_idx + col_idx][current_width - 1], \
+                matrix[height - 1 - row_idx][current_width - 1 - col_idx], \
+                matrix[height - 1 - row_idx - col_idx][row_idx], \
+                matrix[row_idx][col_idx] \
+                = \
+                matrix[row_idx][col_idx], \
+                matrix[row_idx + col_idx][current_width - 1], \
+                matrix[height - 1 - row_idx][current_width - 1 - col_idx], \
+                matrix[height - 1 - row_idx - col_idx][row_idx]
+
+    return matrix
 
 
 if __name__ == "__main__":

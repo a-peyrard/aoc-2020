@@ -1,6 +1,7 @@
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
 
-from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners
+from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners, _flip_mut, \
+    _rotate_mut
 from aoc.util.num import binary_to_string
 
 
@@ -408,6 +409,83 @@ Tile 3079:
                 2971,
                 1171
             )
+        )
+
+
+class TestFlipMut:
+    def test_should_flip_a_simple_matrix(self):
+        # GIVEN
+        matrix = [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+        ]
+
+        # WHEN
+        res = _flip_mut(matrix)
+
+        # THEN
+        assert_that(
+            res,
+            equal_to([
+                [7, 8, 9],
+                [4, 5, 6],
+                [1, 2, 3]
+            ])
+        )
+
+    def test_should_flip_a_tile_matrix(self):
+        # GIVEN
+        matrix = [
+            ["#", ".", ".", "#", ".", ".", ".", "."],
+            [".", ".", ".", "#", "#", ".", ".", "#"],
+            ["#", "#", "#", ".", "#", ".", ".", "."],
+            ["#", ".", "#", "#", ".", "#", "#", "#"],
+            ["#", ".", ".", ".", "#", ".", "#", "#"],
+            ["#", ".", "#", ".", "#", ".", ".", "#"],
+            [".", "#", ".", ".", ".", ".", "#", "."],
+            ["#", "#", ".", ".", ".", "#", ".", "#"],
+        ]
+
+        # WHEN
+        res = _flip_mut(matrix)
+
+        # THEN
+        assert_that(
+            res,
+            equal_to([
+                ["#", "#", ".", ".", ".", "#", ".", "#"],
+                [".", "#", ".", ".", ".", ".", "#", "."],
+                ["#", ".", "#", ".", "#", ".", ".", "#"],
+                ["#", ".", ".", ".", "#", ".", "#", "#"],
+                ["#", ".", "#", "#", ".", "#", "#", "#"],
+                ["#", "#", "#", ".", "#", ".", ".", "."],
+                [".", ".", ".", "#", "#", ".", ".", "#"],
+                ["#", ".", ".", "#", ".", ".", ".", "."],
+            ])
+        )
+
+
+class TestRotateMut:
+    def test_should_rotate_a_matrix(self):
+        # GIVEN
+        matrix = [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+        ]
+
+        # WHEN
+        res = _rotate_mut(matrix)
+
+        # THEN
+        assert_that(
+            res,
+            equal_to([
+                [7, 4, 1],
+                [8, 5, 2],
+                [9, 6, 3]
+            ])
         )
 
 
