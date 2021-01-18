@@ -278,6 +278,7 @@ from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar
 
 from aoc.util.functional import compose
 from aoc.util.list import flat_map
+from aoc.util.matrix import initialize_matrix
 from aoc.util.text import generate_paragraphs
 
 DEBUG = False
@@ -569,6 +570,25 @@ def _rotate_mut(matrix: List[List[T]]) -> List[List[T]]:
                 = a, b, c, d
 
     return matrix
+
+
+def _draw_picture(jigsaw: List[List[Tile]]) -> List[List[str]]:
+    tile_drawing_size = len(jigsaw[0][0].inner_content)
+    full_drawing_size = len(jigsaw) * tile_drawing_size
+    result = initialize_matrix("", full_drawing_size)
+
+    for row_idx, row in enumerate(jigsaw):
+        for col_idx, tile in enumerate(row):
+            tile_drawing = tile.draw()
+            for tile_row_idx in range(tile_drawing_size):
+                for tile_col_idx in range(tile_drawing_size):
+                    result[
+                        row_idx * tile_drawing_size + tile_row_idx
+                    ][
+                        col_idx * tile_drawing_size + tile_col_idx
+                    ] = tile_drawing[tile_row_idx][tile_col_idx]
+
+    return result
 
 
 if __name__ == "__main__":

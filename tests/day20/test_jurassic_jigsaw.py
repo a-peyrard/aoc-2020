@@ -3,7 +3,7 @@ from unittest.mock import ANY
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
 
 from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners, _flip_mut, \
-    _rotate_mut
+    _rotate_mut, _draw_picture
 from aoc.util.num import binary_to_string
 
 
@@ -808,3 +808,70 @@ Tile 3079:
 
         # THEN
         assert_that(res, equal_to(20899048083289))
+
+
+class TestDrawPicture:
+    def test_should_draw_the_picture(self):
+        # GIVEN
+        tile_1 = Tile(
+            id=1,
+            top=1,
+            right=1,
+            bottom=1,
+            left=1,
+            inner_content=[
+                ["1", "2"],
+                ["3", "4"]
+            ]
+        )
+        tile_2 = Tile(
+            id=2,
+            top=2,
+            right=2,
+            bottom=2,
+            left=2,
+            inner_content=[
+                ["5", "6"],
+                ["7", "8"]
+            ]
+        )
+        tile_3 = Tile(
+            id=3,
+            top=3,
+            right=3,
+            bottom=3,
+            left=3,
+            inner_content=[
+                ["9", "a"],
+                ["b", "c"]
+            ]
+        )
+        tile_4 = Tile(
+            id=4,
+            top=4,
+            right=4,
+            bottom=4,
+            left=4,
+            inner_content=[
+                ["d", "e"],
+                ["f", "g"]
+            ]
+        )
+        jigsaw = [
+            [tile_1, tile_2],
+            [tile_3, tile_4],
+        ]
+
+        # WHEN
+        drawing = _draw_picture(jigsaw)
+
+        # THEN
+        assert_that(
+            drawing,
+            equal_to([
+                ["1", "2", "5", "6"],
+                ["3", "4", "7", "8"],
+                ["9", "a", "d", "e"],
+                ["b", "c", "f", "g"],
+            ])
+        )
