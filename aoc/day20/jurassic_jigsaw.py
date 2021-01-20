@@ -274,7 +274,7 @@ import re
 import time
 from enum import Enum
 from math import prod
-from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar
+from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar, Optional
 
 from aoc.util.functional import compose
 from aoc.util.list import flat_map
@@ -408,6 +408,58 @@ class Tile(NamedTuple):
         mutations.extend([_rotate_mut] * (self.rotation // 90))
 
         return compose(*mutations)(drawing)
+
+
+class Pattern(NamedTuple):
+    @staticmethod
+    def parse(raw: List[str]):
+        return Pattern(
+            shape=list(map(Pattern._parse_row, raw))
+        )
+
+    @staticmethod
+    def _parse_row(row: str) -> List[Optional[str]]:
+        return [
+            c if c.strip() else None
+            for c in row
+        ]
+
+    shape: List[List[Optional[T]]]
+
+    def count_occurrences(self, drawing: List[List[T]]) -> int:
+        shape_height = len(self.shape)
+        shape_width = max(map(len, self.shape))
+
+        drawing_height = len(drawing)
+        drawing_width = len(drawing[0])
+
+        number_of_matches = 0
+        row_idx = 0
+        while row_idx < drawing_height - shape_height + 1:
+            col_idx = 0
+            while col_idx < drawing_width - shape_width + 1:
+                match = all((
+                    Pattern._match(piece, drawing[row_idx + shape_row_idx], col_idx)
+                    for shape_row_idx, piece in enumerate(self.shape)
+                ))
+                if match:
+                    number_of_matches += 1
+                    col_idx += shape_width
+                else:
+                    col_idx += 1
+
+            row_idx += 1
+
+        return number_of_matches
+
+    @staticmethod
+    def _match(piece: List[T], line: List[T], offset: int) -> bool:
+        for idx in range(0, len(piece)):
+            item = piece[idx]
+            if item and line[offset + idx] != item:
+                return False
+
+        return True
 
 
 TILE_REGEX = re.compile(r"Tile (\d+):")

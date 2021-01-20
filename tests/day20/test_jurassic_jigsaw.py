@@ -3,7 +3,7 @@ from unittest.mock import ANY
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
 
 from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners, _flip_mut, \
-    _rotate_mut, _draw_picture
+    _rotate_mut, _draw_picture, Pattern
 from aoc.util.num import binary_to_string
 
 
@@ -874,4 +874,73 @@ class TestDrawPicture:
                 ["9", "a", "d", "e"],
                 ["b", "c", "f", "g"],
             ])
+        )
+
+
+class TestPattern:
+    def test_should_parse_a_pattern(self):
+        # GIVEN
+        raw = [
+            "                  #",
+            "#    ##    ##    ###",
+            " #  #  #  #  #  #"
+        ]
+
+        # WHEN
+        pattern = Pattern.parse(raw)
+
+        # THEN
+        assert_that(
+            pattern.shape,
+            equal_to([
+                [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, "#"],
+                ["#", None, None, None, None, "#", "#", None, None, None, None, "#", "#", None, None, None, None, "#", "#", "#"],
+                [None, "#", None, None, "#", None, None, "#", None, None, "#", None, None, "#", None, None, "#"]
+            ])
+        )
+
+    def test_should_count_the_number_of_pattern(self):
+        # GIVEN
+        drawing = list(map(
+            list,
+            [
+                ".####...#####..#...###..",
+                "#####..#..#.#.####..#.#.",
+                ".#.#...#.###...#.##.##..",
+                "#.#.##.###.#.##.##.#####",
+                "..##.###.####..#.####.##",
+                "...#.#..##.##...#..#..##",
+                "#.##.#..#.#..#..##.#.#..",
+                ".###.##.....#...###.#...",
+                "#.####.#.#....##.#..#.#.",
+                "##...#..#....#..#...####",
+                "..#.##...###..#.#####..#",
+                "....#.##.#.#####....#...",
+                "..##.##.###.....#.##..#.",
+                "#...#...###..####....##.",
+                ".#.##...#.##.#.#.###...#",
+                "#.###.#..####...##..#...",
+                "#.###...#.##...#.######.",
+                ".###.###.#######..#####.",
+                "..##.#..#..#.#######.###",
+                "#.#..##.########..#..##.",
+                "#.#####..#.#...##..#....",
+                "#....##..#.#########..##",
+                "#...#.....#..##...###.##",
+                "#..###....##.#...##.##.#",
+            ]
+        ))
+        pattern = Pattern.parse([
+            "                  #",
+            "#    ##    ##    ###",
+            " #  #  #  #  #  #"
+        ])
+
+        # WHEN
+        occurrences = pattern.count_occurrences(drawing)
+
+        # THEN
+        assert_that(
+            occurrences,
+            equal_to(2)
         )
