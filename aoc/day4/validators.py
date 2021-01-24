@@ -1,7 +1,7 @@
 import re
 from typing import Callable, List, Optional, Set
 
-from aoc.day4.functional import compose
+from aoc.util.functional import compose
 
 ValueValidator = Callable[[Optional[str]], bool]
 ValueExtractor = Callable[[str], Optional[str]]
