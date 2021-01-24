@@ -1,3 +1,4 @@
+import time
 from copy import deepcopy
 from unittest.mock import ANY
 
@@ -108,7 +109,7 @@ Tile 2473:
         )
 
 
-class TestTileDraw:
+class TestTileDrawing:
     def test_should_draw_a_tile(self):
         # GIVEN
         a_tile = """Tile 2729:
@@ -126,7 +127,7 @@ class TestTileDraw:
         _, flipped_rotation_180, _ = tile.flip().rotate()
 
         # WHEN
-        drawing = flipped_rotation_180.draw()
+        drawing = flipped_rotation_180.drawing
 
         # THEN
         # noinspection PyTypeChecker
@@ -162,7 +163,7 @@ class TestTileDraw:
         _, flipped_rotation_180, _ = tile.flip().rotate()
 
         # WHEN
-        drawing = flipped_rotation_180.draw()
+        drawing = flipped_rotation_180.drawing
 
         # THEN
         # noinspection PyTypeChecker
@@ -194,7 +195,7 @@ class TestTileDraw:
         flipped = tile.flip()
 
         # WHEN
-        drawing = flipped.draw()
+        drawing = flipped.drawing
 
         # THEN
         # noinspection PyTypeChecker
@@ -225,7 +226,7 @@ class TestTileDraw:
         _, _, tile_c_f_r270 = tile_c.flip().rotate()
 
         # WHEN
-        drawing = tile_c_f_r270.draw()
+        drawing = tile_c_f_r270.drawing
 
         # THEN
         # noinspection PyTypeChecker
@@ -254,7 +255,7 @@ class TestTileDraw:
         _, _, tile_2473_f_r270 = tile_2473.flip().rotate()
 
         # WHEN
-        drawing = tile_2473_f_r270.draw()
+        drawing = tile_2473_f_r270.drawing
 
         # THEN
         # noinspection PyTypeChecker
@@ -1695,9 +1696,12 @@ Tile 3079:
 ..#.###..."""
 
         # WHEN
+        start = time.time()
         res = solve_part2(
             _parse(raw_tiles.splitlines(keepends=True))
         )
+        end = time.time()
+        print(f"solution computed in {(end - start) * 1000}ms")
 
         # THEN
         assert_that(res, equal_to(273))

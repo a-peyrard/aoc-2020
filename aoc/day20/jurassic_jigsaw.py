@@ -272,7 +272,9 @@ How many # are not part of a sea monster?
 import os
 import re
 import time
+from dataclasses import dataclass
 from enum import Enum
+from functools import cached_property
 from math import prod, isqrt
 from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar, Optional, Callable
 
@@ -294,7 +296,8 @@ class Direction(Enum):
     LEFT = 4
 
 
-class Tile(NamedTuple):
+@dataclass(frozen=True)
+class Tile:
     @staticmethod
     def parse(lines: List[str]) -> 'Tile':
         # Tile 2311:
@@ -396,14 +399,16 @@ class Tile(NamedTuple):
             rotation=self.rotation
         )
 
-    def get_all_variants(self) -> List['Tile']:
+    @cached_property
+    def variants(self) -> List['Tile']:
         flipped = self.flip()
         tiles = [self, flipped]
         tiles.extend(self.rotate())
         tiles.extend(flipped.rotate())
         return tiles
 
-    def draw(self):
+    @cached_property
+    def drawing(self):
         drawing = [
             row.copy()
             for row in self.inner_content
@@ -542,7 +547,7 @@ def _get_all_matches_for_tile(tile: Tile,
                               tiles_by_id: Dict[int, Tile]) -> List[Tuple[Direction, Tile]]:
 
     possibles_matches = flat_map(map(
-        lambda tile_id: tiles_by_id[tile_id].get_all_variants(),
+        lambda tile_id: tiles_by_id[tile_id].variants,
         available_tile_ids
     ))
     return _get_all_matches_for_tile_from_list(
@@ -640,7 +645,7 @@ def _draw_picture(jigsaw: List[List[Tile]]) -> List[List[str]]:
 
     for row_idx, row in enumerate(jigsaw):
         for col_idx, tile in enumerate(row):
-            tile_drawing = tile.draw()
+            tile_drawing = tile.drawing
             for tile_row_idx in range(tile_drawing_size):
                 for tile_col_idx in range(tile_drawing_size):
                     result[
@@ -709,7 +714,7 @@ def _do_jigsaw_rec(jigsaw_size: int,
     row, col = coordinates
     next_coord = _get_next_coordinates(jigsaw_size, coordinates)
     for possible_tile in possible_tiles:
-        for variant in possible_tile.get_all_variants():
+        for variant in possible_tile.variants:
             DEBUG and print(f"...try {variant} for coord {coordinates}")
             if _can_use_tile(in_progress_jigsaw, variant, coordinates):
                 DEBUG and print(f"🎉 we have a match for coord {coordinates}: {variant}")
