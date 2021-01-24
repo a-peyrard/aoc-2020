@@ -832,3 +832,9 @@ if __name__ == "__main__":
         end = time.time()
         print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
         assert solution_part1 == 19955159604613
+
+        start = time.time()
+        solution_part2 = solve_part2(_tiles, _corners)
+        end = time.time()
+        print(f"solution (part2): {solution_part2} in {(end - start) * 1000}ms")
+        assert solution_part2 == 1639
