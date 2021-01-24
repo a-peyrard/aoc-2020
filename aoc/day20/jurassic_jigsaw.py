@@ -274,7 +274,7 @@ import re
 import time
 from enum import Enum
 from math import prod, isqrt
-from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar, Optional
+from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar, Optional, Callable
 
 from aoc.util.functional import compose
 from aoc.util.list import flat_map
@@ -409,9 +409,9 @@ class Tile(NamedTuple):
             for row in self.inner_content
         ]
         mutations = []
+        mutations.extend([_rotate_mut] * (self.rotation // 90))
         if self.flipped:
             mutations.append(_flip_mut)
-        mutations.extend([_rotate_mut] * (self.rotation // 90))
 
         return compose(*mutations)(drawing)
 
@@ -579,7 +579,7 @@ def _find_corners(tiles_by_id: Dict[int, Tile]) -> List[int]:
     return corners
 
 
-def solve_part1(tiles: List[Tile]) -> int:
+def solve_part1(tiles: List[Tile]) -> Tuple[int, List[int]]:
     tiles_by_id = {
         tile.id: tile
         for tile in tiles
@@ -587,7 +587,7 @@ def solve_part1(tiles: List[Tile]) -> int:
 
     corners = _find_corners(tiles_by_id)
 
-    return prod(corners)
+    return prod(corners), corners
 
 
 def _flip_mut(matrix: List[List[T]]) -> List[List[T]]:
@@ -607,7 +607,7 @@ def _rotate_mut(matrix: List[List[T]]) -> List[List[T]]:
     height = len(matrix)
     width = len(matrix[0])
     if height != width:
-        raise ValueError(f"we need a square matrix in order to rotate")
+        raise ValueError(f"we need a square matrix in order to rotate (h: {height}, w: {width})")
 
     # 0 a 0 0 0
     # 0 0 0 0 b
@@ -660,10 +660,8 @@ def _generate_empty_jigsaw(size: int) -> List[List[Optional[Tile]]]:
     ]
 
 
-def _do_jigsaw(tiles_by_id: Dict[int, Tile]) -> Optional[List[List[Tile]]]:
-    # first we need to find the corners
-    corners = _find_corners(tiles_by_id)
-
+def _do_jigsaw(tiles_by_id: Dict[int, Tile],
+               corners: List[int]) -> Optional[List[List[Tile]]]:
     # generate an empty jigsaw and place the first corner
     jigsaw_size = isqrt(len(tiles_by_id))
     in_progress_jigsaw = _generate_empty_jigsaw(jigsaw_size)
@@ -775,12 +773,57 @@ def _get_next_coordinates(jigsaw_size: int,
     return None
 
 
+def solve_part2(tiles: List[Tile],
+                corners: Optional[List[int]] = None) -> int:
+    tiles_by_id = {
+        tile.id: tile
+        for tile in tiles
+    }
+
+    corners = corners if corners else _find_corners(tiles_by_id)
+    jigsaw = _do_jigsaw(tiles_by_id, corners)
+
+    drawing = _draw_picture(jigsaw)
+    pattern = Pattern.parse([
+        "                  #",
+        "#    ##    ##    ###",
+        " #  #  #  #  #  #"
+    ])
+
+    transformations: List[Callable[[List[List[str]]], List[List[str]]]] = [
+        lambda x: x,
+        _rotate_mut,
+        compose(_rotate_mut, _rotate_mut),
+        compose(_rotate_mut, _rotate_mut, _rotate_mut),
+        _flip_mut,
+        _rotate_mut,
+        compose(_rotate_mut, _rotate_mut),
+        compose(_rotate_mut, _rotate_mut, _rotate_mut),
+    ]
+    number_of_monster = next(filter(
+        lambda n: n > 0,
+        (
+            pattern.count_occurrences(transformation(drawing))
+            for transformation in transformations
+        )
+    ))
+
+    return _count_character(drawing, "#") - (15 * number_of_monster)
+
+
+def _count_character(drawing: List[List[str]], character: str) -> int:
+    return sum((
+        sum(map(character.__eq__, row))
+        for row in drawing
+    ))
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
         _tiles = _parse(file.readlines())
 
         start = time.time()
-        solution_part1 = solve_part1(_tiles)
+        solution_part1, _corners = solve_part1(_tiles)
         end = time.time()
         print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
         assert solution_part1 == 19955159604613

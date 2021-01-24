@@ -4,7 +4,8 @@ from unittest.mock import ANY
 from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder, any_of
 
 from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners, _flip_mut, \
-    _rotate_mut, _draw_picture, Pattern, _get_next_coordinates, _do_jigsaw, _can_use_tile, _generate_empty_jigsaw
+    _rotate_mut, _draw_picture, Pattern, _get_next_coordinates, _do_jigsaw, _can_use_tile, _generate_empty_jigsaw, \
+    solve_part2
 from aoc.util.num import binary_to_string
 
 
@@ -205,6 +206,71 @@ class TestTileDraw:
                 ["5", "6", "7", "8"],
                 ["1", "2", "3", "4"],
             ])
+        )
+
+    def test_should_draw_a_flipped_custom_tile_with_rotation_at_270(self):
+        # GIVEN
+        tile_c = Tile(
+            id=123,
+            top=123,
+            right=123,
+            bottom=123,
+            left=123,
+            inner_content=[
+                ["1", "2"],
+                ["3", "4"]
+            ]
+        )
+
+        _, _, tile_c_f_r270 = tile_c.flip().rotate()
+
+        # WHEN
+        drawing = tile_c_f_r270.draw()
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            drawing,
+            equal_to([
+                ["4", "2"],
+                ["3", "1"]
+            ])
+        )
+
+    def test_should_draw_a_flipped_tile_with_rotation_at_270(self):
+        # GIVEN
+        tile_2473 = Tile.parse("""Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.""".splitlines())
+
+        _, _, tile_2473_f_r270 = tile_2473.flip().rotate()
+
+        # WHEN
+        drawing = tile_2473_f_r270.draw()
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            "\n".join((
+                "".join(row)
+                for row in drawing
+            )),
+            equal_to("""#.##....
+.#.###..
+##.#..##
+######.#
+.#.#.#..
+.###.###
+.###.##.
+######..""")
         )
 
 
@@ -804,12 +870,22 @@ Tile 3079:
 ..#.###..."""
 
         # WHEN
-        res = solve_part1(
+        res, corners = solve_part1(
             _parse(raw_tiles.splitlines(keepends=True))
         )
 
         # THEN
         assert_that(res, equal_to(20899048083289))
+        # noinspection PyTypeChecker
+        assert_that(
+            corners,
+            contains_inanyorder(
+                1951,
+                3079,
+                2971,
+                1171
+            )
+        )
 
 
 class TestDrawPicture:
@@ -876,6 +952,171 @@ class TestDrawPicture:
                 ["9", "a", "d", "e"],
                 ["b", "c", "f", "g"],
             ])
+        )
+
+    def test_should_draw_the_given_example(self):
+        # GIVEN
+        raw_tiles = """Tile 2311:
+..##.#..#.
+##..#.....
+#...##..#.
+####.#...#
+##.##.###.
+##...#.###
+.#.#.#..##
+..#....#..
+###...#.#.
+..###..###
+
+Tile 1951:
+#.##...##.
+#.####...#
+.....#..##
+#...######
+.##.#....#
+.###.#####
+###.##.##.
+.###....#.
+..#.#..#.#
+#...##.#..
+
+Tile 1171:
+####...##.
+#..##.#..#
+##.#..#.#.
+.###.####.
+..###.####
+.##....##.
+.#...####.
+#.##.####.
+####..#...
+.....##...
+
+Tile 1427:
+###.##.#..
+.#..#.##..
+.#.##.#..#
+#.#.#.##.#
+....#...##
+...##..##.
+...#.#####
+.#.####.#.
+..#..###.#
+..##.#..#.
+
+Tile 1489:
+##.#.#....
+..##...#..
+.##..##...
+..#...#...
+#####...#.
+#..#.#.#.#
+...#.#.#..
+##.#...##.
+..##.##.##
+###.##.#..
+
+Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.
+
+Tile 2971:
+..#.#....#
+#...###...
+#.#.###...
+##.##..#..
+.#####..##
+.#..####.#
+#..#.#..#.
+..####.###
+..#.#.###.
+...#.#.#.#
+
+Tile 2729:
+...#.#.#.#
+####.#....
+..#.#.....
+....#..#.#
+.##..##.#.
+.#.####...
+####.#.#..
+##.####...
+##..#.##..
+#.##...##.
+
+Tile 3079:
+#.#.#####.
+.#..######
+..#.......
+######....
+####.#..#.
+.#...#.##.
+#.#####.##
+..#.###...
+..#.......
+..#.###..."""
+
+        tiles_by_id = {
+            tile.id: tile
+            for tile in _parse(raw_tiles.splitlines(keepends=True))
+        }
+        tile_1951_f_r000 = tiles_by_id[1951].flip()
+        tile_2311_f_r000 = tiles_by_id[2311].flip()
+        tile_3079_r_r000 = tiles_by_id[3079]
+        tile_2729_f_r000 = tiles_by_id[2729].flip()
+        tile_1427_f_r000 = tiles_by_id[1427].flip()
+        _, _, tile_2473_f_r270 = tiles_by_id[2473].flip().rotate()
+        tile_2971_f_r000 = tiles_by_id[2971].flip()
+        tile_1489_f_r000 = tiles_by_id[1489].flip()
+        _, tile_1171_f_r180, _ = tiles_by_id[1171].flip().rotate()
+
+        jigsaw = [
+            [tile_1951_f_r000, tile_2311_f_r000, tile_3079_r_r000],
+            [tile_2729_f_r000, tile_1427_f_r000, tile_2473_f_r270],
+            [tile_2971_f_r000, tile_1489_f_r000, tile_1171_f_r180]
+        ]
+
+        # WHEN
+        drawing = _draw_picture(jigsaw)
+
+        # THEN
+        assert_that(
+            "\n".join((
+                "".join(row)
+                for row in drawing
+            )),
+            equal_to(""".#.#..#.##...#.##..#####
+###....#.#....#..#......
+##.##.###.#.#..######...
+###.#####...#.#####.#..#
+##.#....#.##.####...#.##
+...########.#....#####.#
+....#..#...##..#.#.###..
+.####...#..#.....#......
+#..#.##..#..###.#.##....
+#.####..#.####.#.#.###..
+###.#.#...#.######.#..##
+#.####....##..########.#
+##..##.#...#...#.#.#.#..
+...#..#..#.#.##..###.###
+.#.#....#.##.#...###.##.
+###.#...#..#.##.######..
+.#.#.###.##.##.#..#.##..
+.####.###.#...###.#..#.#
+..#.#..#..#.#.#.####.###
+#..####...#.#.#.###.###.
+#####..#####...###....##
+#.##..#..#...#..####...#
+.#.###..##..##..####.##.
+...###...##...#...#..###""")
         )
 
 
@@ -1097,10 +1338,12 @@ Tile 3079:
             tile.id: tile
             for tile in _parse(raw_tiles.splitlines(keepends=True))
         }
+        corners = _find_corners(tiles_by_id)
 
         # WHEN
         jigsaw = _do_jigsaw(
-            tiles_by_id
+            tiles_by_id,
+            corners
         )
 
         # THEN
@@ -1261,3 +1504,200 @@ Tile 3079:
         )
         # THEN should be able to use 2311
         assert_that(can_use_2311, equal_to(True))
+
+        # WHEN placing 3079
+        in_progress_jigsaw[0][1] = tile_2311_f_r000
+        tile_3079_r_r000 = tiles_by_id[3079]
+        can_use_3079 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_3079_r_r000,
+            (0, 2)
+        )
+        # THEN should be able to use 3079
+        assert_that(can_use_3079, equal_to(True))
+
+        in_progress_jigsaw[0][2] = tile_3079_r_r000
+        # WHEN placing 2729
+        tile_2729_f_r000 = tiles_by_id[2729].flip()
+        can_use_2729 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_2729_f_r000,
+            (1, 0)
+        )
+        # THEN should be able to use 2729
+        assert_that(can_use_2729, equal_to(True))
+
+        in_progress_jigsaw[1][0] = tile_2729_f_r000
+        # WHEN placing 1427
+        tile_1427_f_r000 = tiles_by_id[1427].flip()
+        can_use_1427 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_1427_f_r000,
+            (1, 1)
+        )
+        # THEN should be able to use 1427
+        assert_that(can_use_1427, equal_to(True))
+
+        in_progress_jigsaw[1][1] = tile_1427_f_r000
+        # WHEN placing 2473
+        _, _, tile_2473_f_r270 = tiles_by_id[2473].flip().rotate()
+        can_use_2473 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_2473_f_r270,
+            (1, 2)
+        )
+        # THEN should be able to use 2473
+        assert_that(can_use_2473, equal_to(True))
+
+        in_progress_jigsaw[1][2] = tile_2473_f_r270
+        # WHEN placing 2971
+        tile_2971_f_r000 = tiles_by_id[2971].flip()
+        can_use_2971 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_2971_f_r000,
+            (2, 0)
+        )
+        # THEN should be able to use 2971
+        assert_that(can_use_2971, equal_to(True))
+
+        in_progress_jigsaw[2][0] = tile_2971_f_r000
+        # WHEN placing 1489
+        tile_1489_f_r000 = tiles_by_id[1489].flip()
+        can_use_1489 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_1489_f_r000,
+            (2, 1)
+        )
+        # THEN should be able to use 1489
+        assert_that(can_use_1489, equal_to(True))
+
+        in_progress_jigsaw[2][1] = tile_1489_f_r000
+        # WHEN placing 1171
+        _, tile_1171_f_r180, _ = tiles_by_id[1171].flip().rotate()
+        can_use_1171 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_1171_f_r180,
+            (2, 2)
+        )
+        # THEN should be able to use 1171
+        assert_that(can_use_1171, equal_to(True))
+
+
+class TestSolvePart2:
+    def test_should_solve_the_given_example(self):
+        # GIVEN
+        raw_tiles = """Tile 2311:
+..##.#..#.
+##..#.....
+#...##..#.
+####.#...#
+##.##.###.
+##...#.###
+.#.#.#..##
+..#....#..
+###...#.#.
+..###..###
+
+Tile 1951:
+#.##...##.
+#.####...#
+.....#..##
+#...######
+.##.#....#
+.###.#####
+###.##.##.
+.###....#.
+..#.#..#.#
+#...##.#..
+
+Tile 1171:
+####...##.
+#..##.#..#
+##.#..#.#.
+.###.####.
+..###.####
+.##....##.
+.#...####.
+#.##.####.
+####..#...
+.....##...
+
+Tile 1427:
+###.##.#..
+.#..#.##..
+.#.##.#..#
+#.#.#.##.#
+....#...##
+...##..##.
+...#.#####
+.#.####.#.
+..#..###.#
+..##.#..#.
+
+Tile 1489:
+##.#.#....
+..##...#..
+.##..##...
+..#...#...
+#####...#.
+#..#.#.#.#
+...#.#.#..
+##.#...##.
+..##.##.##
+###.##.#..
+
+Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.
+
+Tile 2971:
+..#.#....#
+#...###...
+#.#.###...
+##.##..#..
+.#####..##
+.#..####.#
+#..#.#..#.
+..####.###
+..#.#.###.
+...#.#.#.#
+
+Tile 2729:
+...#.#.#.#
+####.#....
+..#.#.....
+....#..#.#
+.##..##.#.
+.#.####...
+####.#.#..
+##.####...
+##..#.##..
+#.##...##.
+
+Tile 3079:
+#.#.#####.
+.#..######
+..#.......
+######....
+####.#..#.
+.#...#.##.
+#.#####.##
+..#.###...
+..#.......
+..#.###..."""
+
+        # WHEN
+        res = solve_part2(
+            _parse(raw_tiles.splitlines(keepends=True))
+        )
+
+        # THEN
+        assert_that(res, equal_to(273))
