@@ -1,9 +1,10 @@
+from copy import deepcopy
 from unittest.mock import ANY
 
-from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder
+from hamcrest import assert_that, contains_exactly, equal_to, contains_inanyorder, any_of
 
 from aoc.day20.jurassic_jigsaw import Tile, _reverse_binary, _parse, solve_part1, Direction, _find_corners, _flip_mut, \
-    _rotate_mut, _draw_picture, Pattern
+    _rotate_mut, _draw_picture, Pattern, _get_next_coordinates, _do_jigsaw, _can_use_tile, _generate_empty_jigsaw
 from aoc.util.num import binary_to_string
 
 
@@ -242,7 +243,7 @@ class TestTileMatch:
 
         # THEN
         assert_that(
-            matches,
+            list(matches),
             equal_to([
                 Direction.BOTTOM
             ])
@@ -533,6 +534,7 @@ Tile 3079:
         )
 
         # THEN
+        # noinspection PyTypeChecker
         assert_that(
             corners,
             contains_inanyorder(
@@ -944,3 +946,318 @@ class TestPattern:
             occurrences,
             equal_to(2)
         )
+
+
+class TestGetNextCoordinates:
+    def test_should_return_next_coordinates_in_middle(self):
+        # GIVEN
+        jigsaw_size = 5
+        coordinates = (2, 3)
+
+        # WHEN
+        next_coord = _get_next_coordinates(jigsaw_size, coordinates)
+
+        # THEN
+        assert_that(next_coord, equal_to((2, 4)))
+
+    def test_should_return_next_coordinates_at_end_of_row(self):
+        # GIVEN
+        jigsaw_size = 5
+        coordinates = (2, 4)
+
+        # WHEN
+        next_coord = _get_next_coordinates(jigsaw_size, coordinates)
+
+        # THEN
+        assert_that(next_coord, equal_to((3, 0)))
+
+    def test_should_return_none_at_end_of_jigsaw(self):
+        # GIVEN
+        jigsaw_size = 5
+        coordinates = (4, 4)
+
+        # WHEN
+        next_coord = _get_next_coordinates(jigsaw_size, coordinates)
+
+        # THEN
+        assert_that(next_coord, equal_to(None))
+
+
+class TestDoJigsaw:
+    def test_should_do_the_given_jigsaw(self):
+        # GIVEN
+        raw_tiles = """Tile 2311:
+..##.#..#.
+##..#.....
+#...##..#.
+####.#...#
+##.##.###.
+##...#.###
+.#.#.#..##
+..#....#..
+###...#.#.
+..###..###
+
+Tile 1951:
+#.##...##.
+#.####...#
+.....#..##
+#...######
+.##.#....#
+.###.#####
+###.##.##.
+.###....#.
+..#.#..#.#
+#...##.#..
+
+Tile 1171:
+####...##.
+#..##.#..#
+##.#..#.#.
+.###.####.
+..###.####
+.##....##.
+.#...####.
+#.##.####.
+####..#...
+.....##...
+
+Tile 1427:
+###.##.#..
+.#..#.##..
+.#.##.#..#
+#.#.#.##.#
+....#...##
+...##..##.
+...#.#####
+.#.####.#.
+..#..###.#
+..##.#..#.
+
+Tile 1489:
+##.#.#....
+..##...#..
+.##..##...
+..#...#...
+#####...#.
+#..#.#.#.#
+...#.#.#..
+##.#...##.
+..##.##.##
+###.##.#..
+
+Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.
+
+Tile 2971:
+..#.#....#
+#...###...
+#.#.###...
+##.##..#..
+.#####..##
+.#..####.#
+#..#.#..#.
+..####.###
+..#.#.###.
+...#.#.#.#
+
+Tile 2729:
+...#.#.#.#
+####.#....
+..#.#.....
+....#..#.#
+.##..##.#.
+.#.####...
+####.#.#..
+##.####...
+##..#.##..
+#.##...##.
+
+Tile 3079:
+#.#.#####.
+.#..######
+..#.......
+######....
+####.#..#.
+.#...#.##.
+#.#####.##
+..#.###...
+..#.......
+..#.###..."""
+        tiles_by_id = {
+            tile.id: tile
+            for tile in _parse(raw_tiles.splitlines(keepends=True))
+        }
+
+        # WHEN
+        jigsaw = _do_jigsaw(
+            tiles_by_id
+        )
+
+        # THEN
+        assert_that(jigsaw is None, equal_to(False))
+
+        jigsaw_ids = [
+            [tile.id for tile in row]
+            for row in jigsaw
+        ]
+        reference = [
+            [1951, 2311, 3079],
+            [2729, 1427, 2473],
+            [2971, 1489, 1171]
+        ]
+        # noinspection PyTypeChecker
+        assert_that(
+            jigsaw_ids,
+            # The result is the reference in any order, meaning we don't know
+            # which corner will be use in top left.
+            # So the result has to be one of the height possibility with rotations and flips
+            any_of(
+                equal_to(reference),
+                equal_to(_rotate_mut(deepcopy(reference))),
+                equal_to(_rotate_mut(_rotate_mut(deepcopy(reference)))),
+                equal_to(_rotate_mut(_rotate_mut(_rotate_mut(deepcopy(reference))))),
+                equal_to(_flip_mut(reference)),
+                equal_to(_rotate_mut(deepcopy(_flip_mut(reference)))),
+                equal_to(_rotate_mut(_rotate_mut(deepcopy(_flip_mut(reference))))),
+                equal_to(_rotate_mut(_rotate_mut(_rotate_mut(deepcopy(_flip_mut(reference))))))
+            )
+        )
+
+
+class TestCanUseTitle:
+    def test_should_do_the_given_jigsaw_tile_by_tile(self):
+        # GIVEN
+        raw_tiles = """Tile 2311:
+..##.#..#.
+##..#.....
+#...##..#.
+####.#...#
+##.##.###.
+##...#.###
+.#.#.#..##
+..#....#..
+###...#.#.
+..###..###
+
+Tile 1951:
+#.##...##.
+#.####...#
+.....#..##
+#...######
+.##.#....#
+.###.#####
+###.##.##.
+.###....#.
+..#.#..#.#
+#...##.#..
+
+Tile 1171:
+####...##.
+#..##.#..#
+##.#..#.#.
+.###.####.
+..###.####
+.##....##.
+.#...####.
+#.##.####.
+####..#...
+.....##...
+
+Tile 1427:
+###.##.#..
+.#..#.##..
+.#.##.#..#
+#.#.#.##.#
+....#...##
+...##..##.
+...#.#####
+.#.####.#.
+..#..###.#
+..##.#..#.
+
+Tile 1489:
+##.#.#....
+..##...#..
+.##..##...
+..#...#...
+#####...#.
+#..#.#.#.#
+...#.#.#..
+##.#...##.
+..##.##.##
+###.##.#..
+
+Tile 2473:
+#....####.
+#..#.##...
+#.##..#...
+######.#.#
+.#...#.#.#
+.#########
+.###.#..#.
+########.#
+##...##.#.
+..###.#.#.
+
+Tile 2971:
+..#.#....#
+#...###...
+#.#.###...
+##.##..#..
+.#####..##
+.#..####.#
+#..#.#..#.
+..####.###
+..#.#.###.
+...#.#.#.#
+
+Tile 2729:
+...#.#.#.#
+####.#....
+..#.#.....
+....#..#.#
+.##..##.#.
+.#.####...
+####.#.#..
+##.####...
+##..#.##..
+#.##...##.
+
+Tile 3079:
+#.#.#####.
+.#..######
+..#.......
+######....
+####.#..#.
+.#...#.##.
+#.#####.##
+..#.###...
+..#.......
+..#.###..."""
+        tiles_by_id = {
+            tile.id: tile
+            for tile in _parse(raw_tiles.splitlines(keepends=True))
+        }
+        in_progress_jigsaw = _generate_empty_jigsaw(3)
+        tile_1951_f_r000 = tiles_by_id[1951].flip()
+        in_progress_jigsaw[0][0] = tile_1951_f_r000
+
+        # WHEN placing 2311
+        tile_2311_f_r000 = tiles_by_id[2311].flip()
+        can_use_2311 = _can_use_tile(
+            in_progress_jigsaw,
+            tile_2311_f_r000,
+            (0, 1)
+        )
+        # THEN should be able to use 2311
+        assert_that(can_use_2311, equal_to(True))

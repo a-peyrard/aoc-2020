@@ -273,7 +273,7 @@ import os
 import re
 import time
 from enum import Enum
-from math import prod
+from math import prod, isqrt
 from typing import List, Tuple, Iterable, NamedTuple, Set, Dict, TypeVar, Optional
 
 from aoc.util.functional import compose
@@ -344,17 +344,23 @@ class Tile(NamedTuple):
     flipped: bool = False
     rotation: int = 0
 
-    def match(self, other: 'Tile') -> List[Direction]:
-        matches = []
-        if self.top == other.bottom:
-            matches.append(Direction.TOP)
-        if self.right == other.left:
-            matches.append(Direction.RIGHT)
-        if self.bottom == other.top:
-            matches.append(Direction.BOTTOM)
-        if self.left == other.right:
-            matches.append(Direction.LEFT)
-        return matches
+    def match(self, other: 'Tile') -> Iterable[Direction]:
+        return (
+            direction
+            for direction in Direction
+            if self.match_direction(other, direction)
+        )
+
+    def match_direction(self, other: 'Tile', direction: Direction) -> bool:
+        if direction == Direction.TOP:
+            return self.top == other.bottom
+        if direction == Direction.RIGHT:
+            return self.right == other.left
+        if direction == Direction.BOTTOM:
+            return self.bottom == other.top
+        if direction == Direction.LEFT:
+            return self.left == other.right
+        raise ValueError(f"unexpected direction {direction}")
 
     def rotate(self) -> Tuple['Tile', 'Tile', 'Tile']:
         rotation_90 = self._rotate_90()
@@ -408,6 +414,9 @@ class Tile(NamedTuple):
         mutations.extend([_rotate_mut] * (self.rotation // 90))
 
         return compose(*mutations)(drawing)
+
+    def __repr__(self) -> str:
+        return f"tile_{self.id}_{'f' if self.flipped else 'r'}_r{self.rotation:03}"
 
 
 class Pattern(NamedTuple):
@@ -555,7 +564,7 @@ def _get_all_matches_for_tile_from_list(tile_to_match: Tile,
     return matches
 
 
-def _find_corners(tiles_by_id: Dict[int, Tile]):
+def _find_corners(tiles_by_id: Dict[int, Tile]) -> List[int]:
     corners = []
     for tile_id in tiles_by_id.keys():
         matches = _match_tile_against_peers(tile_id, tiles_by_id)
@@ -641,6 +650,129 @@ def _draw_picture(jigsaw: List[List[Tile]]) -> List[List[str]]:
                     ] = tile_drawing[tile_row_idx][tile_col_idx]
 
     return result
+
+
+def _generate_empty_jigsaw(size: int) -> List[List[Optional[Tile]]]:
+    row = [None] * size
+    return [
+        row.copy()
+        for _ in range(size)
+    ]
+
+
+def _do_jigsaw(tiles_by_id: Dict[int, Tile]) -> Optional[List[List[Tile]]]:
+    # first we need to find the corners
+    corners = _find_corners(tiles_by_id)
+
+    # generate an empty jigsaw and place the first corner
+    jigsaw_size = isqrt(len(tiles_by_id))
+    in_progress_jigsaw = _generate_empty_jigsaw(jigsaw_size)
+    # in_progress_jigsaw[0][0] = tiles_by_id[corners[0]]
+    # used_tile_ids = {corners[0]}
+
+    # now we need to launch the recursive analysis and try combinations to finish
+    # the jigsaw, easy peasy 😅
+    jigsaw = _do_jigsaw_rec(
+        jigsaw_size,
+        in_progress_jigsaw,
+        set(),
+        tiles_by_id,
+        set(corners),
+        coordinates=(0, 0)
+    )
+
+    return jigsaw
+
+
+def _do_jigsaw_rec(jigsaw_size: int,
+                   in_progress_jigsaw: List[List[Optional[Tile]]],
+                   used_tile_ids: Set[int],
+                   tiles_by_id: Dict[int, Tile],
+                   corners: Set[int],
+                   coordinates: Tuple[int, int]) -> Optional[List[List[Tile]]]:
+
+    DEBUG and print(f"trying to find a tile for coordinate {coordinates}")
+
+    if _is_corner(jigsaw_size, coordinates):
+        # we need to place a corner
+        possible_tiles = (
+            tiles_by_id[tile_id]
+            for tile_id in corners
+            if tile_id not in used_tile_ids
+        )
+    else:
+        # we need to place a tile that have not been used before and which is not a corner
+        possible_tiles = (
+            tiles_by_id[tile_id]
+            for tile_id, tile in tiles_by_id.items()
+            if tile_id not in used_tile_ids and tile_id not in corners
+        )
+
+    row, col = coordinates
+    next_coord = _get_next_coordinates(jigsaw_size, coordinates)
+    for possible_tile in possible_tiles:
+        for variant in possible_tile.get_all_variants():
+            DEBUG and print(f"...try {variant} for coord {coordinates}")
+            if _can_use_tile(in_progress_jigsaw, variant, coordinates):
+                DEBUG and print(f"🎉 we have a match for coord {coordinates}: {variant}")
+                in_progress_jigsaw[row][col] = variant
+                used_tile_ids.add(variant.id)
+                if next_coord:
+                    solution = _do_jigsaw_rec(
+                        jigsaw_size,
+                        in_progress_jigsaw,
+                        used_tile_ids,
+                        tiles_by_id,
+                        corners,
+                        next_coord
+                    )
+                    if solution:
+                        return solution
+                else:
+                    return in_progress_jigsaw
+
+                used_tile_ids.remove(variant.id)
+
+    return None
+
+
+def _is_corner(jigsaw_size: int,
+               coordinates: Tuple[int, int]) -> bool:
+    row, col = coordinates
+    if row == 0:
+        return col == 0 or col == jigsaw_size - 1
+    if row == jigsaw_size - 1:
+        return col == 0 or col == jigsaw_size - 1
+
+    return False
+
+
+def _can_use_tile(in_progress_jigsaw: List[List[Optional[Tile]]],
+                  tile: Tile,
+                  coordinates: Tuple[int, int]) -> bool:
+    row, col = coordinates
+    if col > 0:
+        left_tile = in_progress_jigsaw[row][col - 1]
+        if not left_tile.match_direction(tile, Direction.RIGHT):
+            return False
+
+    if row > 0:
+        top_tile = in_progress_jigsaw[row - 1][col]
+        if not top_tile.match_direction(tile, Direction.BOTTOM):
+            return False
+
+    return True
+
+
+def _get_next_coordinates(jigsaw_size: int,
+                          coordinates: Tuple[int, int]) -> Optional[Tuple[int, int]]:
+    row, col = coordinates
+    if col < jigsaw_size - 1:
+        return row, col + 1
+    if row < jigsaw_size - 1:
+        return row + 1, 0
+
+    return None
 
 
 if __name__ == "__main__":
