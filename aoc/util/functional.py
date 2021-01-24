@@ -6,4 +6,7 @@ def compose2(f, g):
 
 
 def compose(*fs):
-    return reduce(compose2, fs)
+    if fs:
+        return reduce(compose2, fs)
+
+    return lambda x: x
