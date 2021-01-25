@@ -35,7 +35,9 @@ ingredients appear?
 """
 import os
 import re
-from typing import NamedTuple, Set, Iterable
+import time
+from collections import defaultdict
+from typing import NamedTuple, Set, Iterable, Dict, Tuple, List
 
 DEBUG = False
 
@@ -63,6 +65,56 @@ def _parse_food(line: str) -> Food:
     )
 
 
+def solve_part1(foods: List[Food]) -> int:
+    managing_to_reduce = True
+    while managing_to_reduce:
+        managing_to_reduce = False
+        ingredients_by_allergen: Dict[str, Set[str]] = {}
+        for food in foods:
+            for allergen in food.allergens:
+                ingredients_by_allergen[allergen] = food.ingredients \
+                    if allergen not in ingredients_by_allergen \
+                    else ingredients_by_allergen[allergen] & food.ingredients
+
+        matches: List[Tuple[str, str]] = []
+        for allergen, ingredients in ingredients_by_allergen.items():
+            if len(ingredients) == 1:
+                matches.append((allergen, ingredients.pop()))
+
+        if matches:
+            foods = list(map(
+                lambda f: _remove_known_allergens(f, matches),
+                foods
+            ))
+            managing_to_reduce = True
+
+    safe_ingredients = defaultdict(int)
+    for food in foods:
+        if not food.allergens:
+            for ingredient in food.ingredients:
+                safe_ingredients[ingredient] += 1
+
+    return sum(safe_ingredients.values())
+
+
+def _remove_known_allergens(food: Food, known_allergens: List[Tuple[str, str]]) -> Food:
+    allergens = set(food.allergens)
+    ingredients = set(food.ingredients)
+    for allergen, ingredient in known_allergens:
+        if ingredient in ingredients:
+            ingredients.remove(ingredient)
+            if allergen in allergens:
+                allergens.remove(allergen)
+
+    return Food(ingredients, allergens)
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
-        pass  # fixme
+        _foods = list(_parse(file.readlines()))
+
+        start = time.time()
+        solution_part1 = solve_part1(_foods)
+        end = time.time()
+        print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
+        assert solution_part1 == 2230
