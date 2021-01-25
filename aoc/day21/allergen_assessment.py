@@ -31,8 +31,22 @@ In the above example, none of the ingredients kfcds, nhms, sbzzf, or trh can con
 Determine which ingredients cannot possibly contain any of the allergens in your list. How many times do any of those
 ingredients appear?
 
+--- Part Two ---
+
+Now that you've isolated the inert ingredients, you should have enough information to figure out which ingredient
+contains which allergen.
+In the above example:
+    mxmxvkd contains dairy.
+    sqjhc contains fish.
+    fvjkl contains soy.
+Arrange the ingredients alphabetically by their allergen and separate them by commas to produce your canonical dangerous
+ ingredient list. (There should not be any spaces in your canonical dangerous ingredient list.) In the above example,
+ this would be mxmxvkd,sqjhc,fvjkl.
+Time to stock your raft with supplies. What is your canonical dangerous ingredient list?
+
 
 """
+import operator
 import os
 import re
 import time
@@ -65,8 +79,9 @@ def _parse_food(line: str) -> Food:
     )
 
 
-def solve_part1(foods: List[Food]) -> int:
+def solve_part1(foods: List[Food]) -> Tuple[int, List[Tuple[str, str]]]:
     managing_to_reduce = True
+    all_matches = []
     while managing_to_reduce:
         managing_to_reduce = False
         ingredients_by_allergen: Dict[str, Set[str]] = {}
@@ -82,6 +97,7 @@ def solve_part1(foods: List[Food]) -> int:
                 matches.append((allergen, ingredients.pop()))
 
         if matches:
+            all_matches.extend(matches)
             foods = list(map(
                 lambda f: _remove_known_allergens(f, matches),
                 foods
@@ -94,7 +110,7 @@ def solve_part1(foods: List[Food]) -> int:
             for ingredient in food.ingredients:
                 safe_ingredients[ingredient] += 1
 
-    return sum(safe_ingredients.values())
+    return sum(safe_ingredients.values()), all_matches
 
 
 def _remove_known_allergens(food: Food, known_allergens: List[Tuple[str, str]]) -> Food:
@@ -109,12 +125,25 @@ def _remove_known_allergens(food: Food, known_allergens: List[Tuple[str, str]]) 
     return Food(ingredients, allergens)
 
 
+def solve_part2(known_allergens: List[Tuple[str, str]]) -> str:
+    return ",".join((
+        ingredient
+        for _, ingredient in sorted(known_allergens, key=operator.itemgetter(0))
+    ))
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
         _foods = list(_parse(file.readlines()))
 
         start = time.time()
-        solution_part1 = solve_part1(_foods)
+        solution_part1, _known_allergens = solve_part1(_foods)
         end = time.time()
         print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
         assert solution_part1 == 2230
+
+        start = time.time()
+        solution_part2 = solve_part2(_known_allergens)
+        end = time.time()
+        print(f"solution (part2): {solution_part2} in {(end - start) * 1000}ms")
+        assert solution_part2 == "qqskn,ccvnlbp,tcm,jnqcd,qjqb,xjqd,xhzr,cjxv"
