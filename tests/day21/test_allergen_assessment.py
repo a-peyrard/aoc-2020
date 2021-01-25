@@ -1,6 +1,6 @@
-from hamcrest import assert_that, contains_inanyorder
+from hamcrest import assert_that, contains_inanyorder, equal_to
 
-from aoc.day21.allergen_assessment import _parse, Food
+from aoc.day21.allergen_assessment import _parse, Food, solve_part1
 
 
 class TestParse:
@@ -36,3 +36,18 @@ sqjhc mxmxvkd sbzzf (contains fish)"""
                 )
             )
         )
+
+
+class TestSolvePart1:
+    def test_should_solve_part1(self):
+        # GIVEN
+        raw = """mxmxvkd kfcds sqjhc nhms (contains dairy, fish)
+trh fvjkl sbzzf mxmxvkd (contains dairy)
+sqjhc fvjkl (contains soy)
+sqjhc mxmxvkd sbzzf (contains fish)"""
+
+        # WHEN
+        res = solve_part1(list(_parse(raw.splitlines(keepends=True))))
+
+        # THEN
+        assert_that(res, equal_to(5))
