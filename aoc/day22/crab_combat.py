@@ -504,8 +504,8 @@ Player 2's deck: {deck2}
     return 0 if deck1 else 1, deck1, deck2
 
 
-def _generate_game_state(deck1: Deck, deck2: Deck) -> str:
-    return ",".join(map(str, deck1)) + "#" + ",".join(map(str, deck2))
+def _generate_game_state(deck1: Deck, deck2: Deck) -> Tuple[Tuple[int], Tuple[int]]:
+    return tuple(deck1), tuple(deck2)
 
 
 if __name__ == "__main__":
