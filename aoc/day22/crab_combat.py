@@ -116,10 +116,13 @@ Play the small crab in a game of Combat using the two decks you just dealt. What
 
 """
 import os
+import time
 from collections import deque
+from functools import reduce
 from typing import Tuple, Iterable, Deque
 
 from aoc.util.text import generate_paragraphs
+
 
 Deck = Deque[int]
 
@@ -137,6 +140,35 @@ def _parse_deck(lines: Iterable[str]) -> Deck:
     return deque(cards, maxlen=len(cards) * 2)
 
 
+def play_game(deck1: Deck, deck2: Deck) -> int:
+    while deck1 and deck2:
+        card1 = deck1.popleft()
+        card2 = deck2.popleft()
+        if card1 > card2:
+            deck1.append(card1)
+            deck1.append(card2)
+        else:
+            deck2.append(card2)
+            deck2.append(card1)
+
+    return _calculate_score(deck1 if deck1 else deck2)
+
+
+def _calculate_score(deck: Deck) -> int:
+    deck_length = len(deck)
+    return reduce(
+        lambda acc, cur: acc + ((deck_length - cur[0]) * cur[1]),
+        enumerate(deck),
+        0
+    )
+
+
 if __name__ == "__main__":
     with open(os.path.join(os.path.dirname(__file__), "input")) as file:
-        pass  # fixme
+        _deck1, _deck2 = _parse(file.readlines())
+
+        start = time.time()
+        solution_part1 = play_game(_deck1, _deck2)
+        end = time.time()
+        print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
+        assert solution_part1 == 32413
