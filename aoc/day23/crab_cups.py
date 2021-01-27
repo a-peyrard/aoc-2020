@@ -83,6 +83,24 @@ After the crab is done, what order will the cups be in? Starting after the cup l
 Using your labeling, simulate 100 moves. What are the labels on the cups after cup 1?
 Your puzzle input is 538914762.
 
+--- Part Two ---
+
+Due to what you can only assume is a mistranslation (you're not exactly fluent in Crab), you are quite surprised when
+the crab starts arranging many cups in a circle on your raft - one million (1000000) in total.
+Your labeling is still correct for the first few cups; after that, the remaining cups are just numbered in an increasing
+ fashion starting from the number after the highest number in your list and proceeding one by one until one million is
+ reached. (For example, if your labeling were 54321, the cups would be numbered 5, 4, 3, 2, 1, and then start counting
+ up from 6 until one million is reached.) In this way, every number from one through one million is used exactly once.
+After discovering where you made the mistake in translating Crab Numbers, you realize the small crab isn't going to do
+merely 100 moves; the crab is going to do ten million (10000000) moves!
+The crab is going to hide your stars - one each - under the two cups that will end up immediately clockwise of cup 1.
+You can have them if you predict what the labels on those cups will be when the crab is finished.
+In the above example (389125467), this would be 934001 and then 159792; multiplying these together produces
+149245887792.
+Determine which two cups will end up immediately clockwise of cup 1. What do you get if you multiply their labels
+together?
+
+
 """
 import time
 from dataclasses import dataclass
@@ -96,12 +114,21 @@ DEBUG = False
 @dataclass
 class Cup:
     @staticmethod
-    def parse(raw_cups: str) -> 'Cup':
+    def parse(raw_cups: str, cups_wanted: int = -1) -> 'Cup':
         # create a linked list to store the cups
         first = Cup(value=int(raw_cups[0]))
         previous = first
+        max_cup_value = -1
         for raw_cup in raw_cups[1:]:
-            cur = Cup(value=int(raw_cup))
+            value = int(raw_cup)
+            cur = Cup(value)
+            if value > max_cup_value:
+                max_cup_value = value
+            previous.next = cur
+            previous = cur
+
+        for additional_cup in range(max_cup_value + 1, cups_wanted + 1):
+            cur = Cup(value=additional_cup)
             previous.next = cur
             previous = cur
 
@@ -225,6 +252,14 @@ cups: {cups.current_cup!r}
     return cups
 
 
+def generate_prod_part2(cups: Cups) -> int:
+    cup = cups.get_cup(1)
+    next_1 = cup.next
+    next_2 = next_1.next
+
+    return next_1.value * next_2.value
+
+
 if __name__ == "__main__":
     _input = "538914762"
 
@@ -234,3 +269,13 @@ if __name__ == "__main__":
     end = time.time()
     print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
     assert solution_part1 == "54327968"
+
+    start = time.time()
+    _cups = play_game(
+        cups=Cups(Cup.parse(_input, cups_wanted=1000000)),
+        iterations=10000000
+    )
+    solution_part2 = generate_prod_part2(_cups)
+    end = time.time()
+    print(f"solution (part2): {solution_part2} in {(end - start) * 1000}ms")
+    assert solution_part2 == 157410423276

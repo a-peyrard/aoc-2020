@@ -1,6 +1,6 @@
 from hamcrest import equal_to, assert_that, contains_exactly
 
-from aoc.day23.crab_cups import Cup, Cups, generate_labels, play_game
+from aoc.day23.crab_cups import Cup, Cups, generate_labels, play_game, generate_prod_part2
 from aoc.util.list import last
 
 
@@ -35,6 +35,19 @@ class TestCupParse:
         cup = cup.next
         assert_that(cup.value, equal_to(1))
         assert_that(cup == original_cup, equal_to(True))
+
+    def test_should_parse_cups_and_add_additional_cups(self):
+        # GIVEN
+        raw_cups = "12"
+
+        # WHEN
+        original_cup = Cup.parse(raw_cups, cups_wanted=10)
+
+        # THEN
+        assert_that(
+            original_cup.__repr__(),
+            equal_to("1, 2, 3, 4, 5, 6, 7, 8, 9, 10")
+        )
 
 
 class TestCupRepr:
@@ -145,6 +158,20 @@ class TestPlayGame:
         assert_that(
             generate_labels(cups),
             equal_to("67384529")
+        )
+
+    def test_should_validate_part2_given_example_with_10000000_iterations(self):
+        # GIVEN
+        raw_cups = "389125467"
+        cups = Cups(Cup.parse(raw_cups, cups_wanted=1000000))
+
+        # WHEN
+        cups = play_game(cups, iterations=10000000)
+
+        # THEN
+        assert_that(
+            generate_prod_part2(cups),
+            equal_to(149245887792)
         )
 
 
