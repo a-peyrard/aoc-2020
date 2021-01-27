@@ -84,8 +84,13 @@ Using your labeling, simulate 100 moves. What are the labels on the cups after c
 Your puzzle input is 538914762.
 
 """
+import time
 from dataclasses import dataclass
-from typing import Dict, List, Iterable
+from operator import attrgetter
+from typing import Dict, List, Iterable, Set
+
+
+DEBUG = False
 
 
 @dataclass
@@ -113,6 +118,17 @@ class Cup:
         for _ in range(distance):
             cur = cur.next
         return cur
+
+    def cut(self, to_cup: 'Cup') -> 'Cup':
+        self.next = to_cup.next
+
+        return self
+
+    def insert_after(self, start_chain, end_chain) -> 'Cup':
+        end_chain.next = self.next
+        self.next = start_chain
+
+        return self
 
     def iter(self) -> Iterable['Cup']:
         yield self
@@ -143,6 +159,78 @@ class Cups:
             for idx, cup in enumerate(self._ordered_cups)
         }
 
+        self._number_of_cups = len(self._ordered_cups)
+
+    def get_cup(self, cup_value: int):
+        return self._ordered_cups[self._lookup[cup_value]]
+
+    @property
+    def current_cup(self):
+        return self._cup
+
+    @current_cup.setter
+    def current_cup(self, new_cup):
+        self._cup = new_cup
+
+    def move_to_next_cup(self) -> 'Cups':
+        self._cup = self._cup.next
+        return self
+
+    def get_lower_cup(self, value: int, disallowed_cup_values: Set[int]):
+        idx = self._lookup[value]
+        next_idx = (idx + 1) % self._number_of_cups
+        lower_cup = self._ordered_cups[next_idx]
+        while lower_cup.value in disallowed_cup_values:
+            next_idx = (next_idx + 1) % self._number_of_cups
+            lower_cup = self._ordered_cups[next_idx]
+
+        return lower_cup
+
+
+def generate_labels(cups: Cups) -> str:
+    cup = cups.get_cup(1)
+    cup_values = list(map(str, map(attrgetter("value"), cup.iter())))
+
+    return "".join(cup_values[1:])
+
+
+def play_game(cups: Cups, iterations: int = 100) -> Cups:
+    for move_idx in range(iterations):
+        cups = do_move(move_idx, cups)
+
+    return cups
+
+
+def do_move(move_idx: int, cups: Cups) -> Cups:
+    DEBUG and print(f"""-- move {move_idx + 1} --
+cups: {cups.current_cup!r}
+""")
+    cup = cups.current_cup
+    used_cups = set()
+    next_cup1 = cup.next
+    used_cups.add(next_cup1.value)
+    next_cup2 = next_cup1.next
+    used_cups.add(next_cup2.value)
+    next_cup3 = next_cup2.next
+    used_cups.add(next_cup3.value)
+
+    cup.cut(to_cup=next_cup3)
+    cup_where_to_attach = cups.get_lower_cup(cup.value, disallowed_cup_values=used_cups)
+    cup_where_to_attach.insert_after(
+        start_chain=next_cup1,
+        end_chain=next_cup3
+    )
+    cups.move_to_next_cup()
+
+    return cups
+
 
 if __name__ == "__main__":
-    pass
+    _input = "538914762"
+
+    start = time.time()
+    _cups = play_game(Cups(Cup.parse(_input)))
+    solution_part1 = generate_labels(_cups)
+    end = time.time()
+    print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
+    assert solution_part1 == "54327968"
