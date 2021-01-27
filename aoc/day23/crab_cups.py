@@ -85,6 +85,7 @@ Your puzzle input is 538914762.
 
 """
 from dataclasses import dataclass
+from typing import Dict, List
 
 
 @dataclass
@@ -106,6 +107,12 @@ class Cup:
 
     value: int
     next: 'Cup' = None
+
+    def next_cup(self, distance: int = 0) -> 'Cup':
+        cur = self.next
+        for _ in range(distance):
+            cur = cur.next
+        return cur
 
     def __repr__(self) -> str:
         res = f"{self.value}"

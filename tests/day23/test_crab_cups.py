@@ -46,3 +46,27 @@ class TestCupRepr:
 
         # THEN
         assert_that(cup.__repr__(), equal_to("1, 2, 3, 4"))
+
+
+class TestCupNextCup:
+    def test_should_get_next_cup(self):
+        # GIVEN
+        raw_cups = "1234"
+        cup = Cup.parse(raw_cups)
+
+        # WHEN
+        next_cup = cup.next_cup()
+
+        # THEN
+        assert_that(next_cup.value, equal_to(2))
+
+    def test_should_allow_to_specify_distance(self):
+        # GIVEN
+        raw_cups = "389125467"
+        cup = Cup.parse(raw_cups)
+
+        # WHEN
+        cup_distance_3 = cup.next_cup(distance=3)
+
+        # THEN
+        assert_that(cup_distance_3.value, equal_to(2))
