@@ -1,6 +1,6 @@
-from hamcrest import equal_to, assert_that
+from hamcrest import equal_to, assert_that, contains_exactly
 
-from aoc.day23.crab_cups import Cup
+from aoc.day23.crab_cups import Cup, Cups
 
 
 class TestCupParse:
@@ -70,3 +70,36 @@ class TestCupNextCup:
 
         # THEN
         assert_that(cup_distance_3.value, equal_to(2))
+
+
+class TestCupsInit:
+    def test_should_init_cups(self):
+        # GIVEN
+        raw_cups = "3418"
+        cup = Cup.parse(raw_cups)
+        cup_3 = cup
+        cup_4 = cup_3.next
+        cup_1 = cup_4.next
+        cup_8 = cup_1.next
+
+        # WHEN
+        cups = Cups(cup)
+
+        # THEN
+        # noinspection PyTypeChecker
+        assert_that(
+            cups._ordered_cups,
+            contains_exactly(
+                cup_8, cup_4, cup_3, cup_1
+            )
+        )
+        assert_that(
+            cups._lookup,
+            equal_to({
+                8: 0,
+                4: 1,
+                3: 2,
+                1: 3
+            })
+        )
+

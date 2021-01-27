@@ -85,7 +85,7 @@ Your puzzle input is 538914762.
 
 """
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Iterable
 
 
 @dataclass
@@ -114,6 +114,13 @@ class Cup:
             cur = cur.next
         return cur
 
+    def iter(self) -> Iterable['Cup']:
+        yield self
+        cur = self.next
+        while cur != self:
+            yield cur
+            cur = cur.next
+
     def __repr__(self) -> str:
         res = f"{self.value}"
         cur = self.next
@@ -122,6 +129,19 @@ class Cup:
             cur = cur.next
 
         return res
+
+
+class Cups:
+    def __init__(self, cup: Cup):
+        self._cup: Cup = cup
+
+        self._ordered_cups: List[Cup] = \
+            list(sorted(self._cup.iter(), key=lambda c: c.value, reverse=True))
+
+        self._lookup: Dict[int, int] = {
+            cup.value: idx
+            for idx, cup in enumerate(self._ordered_cups)
+        }
 
 
 if __name__ == "__main__":
