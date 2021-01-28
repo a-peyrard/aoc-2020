@@ -105,16 +105,20 @@ together?
 import time
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Dict, List, Iterable, Set
-
+from typing import Dict, List, Iterable, Set, Optional
 
 DEBUG = False
 
 
 @dataclass
 class Cup:
+    value: int
+    next: 'Cup' = None
+
+
+class Cups:
     @staticmethod
-    def parse(raw_cups: str, cups_wanted: int = -1) -> 'Cup':
+    def parse(raw_cups: str, cups_wanted: int = -1) -> 'Cups':
         # create a linked list to store the cups
         first = Cup(value=int(raw_cups[0]))
         previous = first
@@ -135,51 +139,13 @@ class Cup:
         # we need a circle, the last cup is linked to the first one
         previous.next = first
 
-        return first
+        return Cups(first)
 
-    value: int
-    next: 'Cup' = None
-
-    def next_cup(self, distance: int = 0) -> 'Cup':
-        cur = self.next
-        for _ in range(distance):
-            cur = cur.next
-        return cur
-
-    def cut(self, to_cup: 'Cup') -> 'Cup':
-        self.next = to_cup.next
-
-        return self
-
-    def insert_after(self, start_chain, end_chain) -> 'Cup':
-        end_chain.next = self.next
-        self.next = start_chain
-
-        return self
-
-    def iter(self) -> Iterable['Cup']:
-        yield self
-        cur = self.next
-        while cur != self:
-            yield cur
-            cur = cur.next
-
-    def __repr__(self) -> str:
-        res = f"{self.value}"
-        cur = self.next
-        while cur != self:
-            res += f", {cur.value}"
-            cur = cur.next
-
-        return res
-
-
-class Cups:
     def __init__(self, cup: Cup):
         self._cup: Cup = cup
 
         self._ordered_cups: List[Cup] = \
-            list(sorted(self._cup.iter(), key=lambda c: c.value, reverse=True))
+            list(sorted(Cups.iter_intern(self._cup), key=lambda c: c.value, reverse=True))
 
         self._lookup: Dict[int, int] = {
             cup.value: idx
@@ -199,8 +165,8 @@ class Cups:
     def current_cup(self, new_cup):
         self._cup = new_cup
 
-    def move_to_next_cup(self) -> 'Cups':
-        self._cup = self._cup.next
+    def move_to_next_cup(self, target: Optional[Cup] = None) -> 'Cups':
+        self._cup = target if target else self._cup.next
         return self
 
     def get_lower_cup(self, value: int, disallowed_cup_values: Set[int]):
@@ -213,10 +179,46 @@ class Cups:
 
         return lower_cup
 
+    def iter(self) -> Iterable[Cup]:
+        return Cups.iter_intern(self.current_cup)
+
+    def cut(self, to_cup: 'Cup') -> 'Cups':
+        self.current_cup.next = to_cup.next
+
+        return self
+
+    def insert_after(self,
+                     target_cup: Cup,
+                     start_chain: Cup,
+                     end_chain: Cup) -> 'Cups':
+        end_chain.next = target_cup.next
+        target_cup.next = start_chain
+
+        return self
+
+    @staticmethod
+    def iter_intern(cup: Cup) -> Iterable[Cup]:
+        yield cup
+        cur = cup.next
+        while cur != cup:
+            yield cur
+            cur = cur.next
+
+    def __repr__(self) -> str:
+        cup = self.current_cup
+        res = f"{cup.value}"
+        cur = cup.next
+        while cur != cup:
+            res += f", {cur.value}"
+            cur = cur.next
+
+        return res
+
 
 def generate_labels(cups: Cups) -> str:
     cup = cups.get_cup(1)
-    cup_values = list(map(str, map(attrgetter("value"), cup.iter())))
+    cups.move_to_next_cup(target=cup)
+    cup_values = list(map(str, map(attrgetter("value"), cups.iter())))
 
     return "".join(cup_values[1:])
 
@@ -241,9 +243,10 @@ cups: {cups.current_cup!r}
     next_cup3 = next_cup2.next
     used_cups.add(next_cup3.value)
 
-    cup.cut(to_cup=next_cup3)
+    cups.cut(to_cup=next_cup3)
     cup_where_to_attach = cups.get_lower_cup(cup.value, disallowed_cup_values=used_cups)
-    cup_where_to_attach.insert_after(
+    cups.insert_after(
+        target_cup=cup_where_to_attach,
         start_chain=next_cup1,
         end_chain=next_cup3
     )
@@ -264,7 +267,7 @@ if __name__ == "__main__":
     _input = "538914762"
 
     start = time.time()
-    _cups = play_game(Cups(Cup.parse(_input)))
+    _cups = play_game(Cups.parse(_input))
     solution_part1 = generate_labels(_cups)
     end = time.time()
     print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
@@ -272,7 +275,7 @@ if __name__ == "__main__":
 
     start = time.time()
     _cups = play_game(
-        cups=Cups(Cup.parse(_input, cups_wanted=1000000)),
+        cups=Cups.parse(_input, cups_wanted=1000000),
         iterations=10000000
     )
     solution_part2 = generate_prod_part2(_cups)
