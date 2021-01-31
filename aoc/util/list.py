@@ -1,3 +1,5 @@
+from functools import reduce
+from operator import add
 from typing import TypeVar, Iterable, List
 
 T = TypeVar("T")
@@ -18,3 +20,7 @@ def last(iterable: Iterable[T],
         pass
 
     return _last
+
+
+def count(iterable: Iterable[T]):
+    return reduce(add, iterable, 0)

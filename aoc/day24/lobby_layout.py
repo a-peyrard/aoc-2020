@@ -48,20 +48,23 @@ Go through the renovation crew's list and determine which tiles they need to fli
 been followed, how many tiles are left with the black side up?
 
 """
+import os
 import time
+from collections import defaultdict
 from collections.abc import Iterator, Iterable
 from enum import Enum
-from typing import List, Optional
+from functools import reduce
+from typing import DefaultDict, NamedTuple
+
+from aoc.util.list import count
 
 DEBUG = False
 
 
 class Direction(Enum):
-    N = "n"
     NE = "ne"
     E = "e"
     SE = "se"
-    S = "s"
     SW = "sw"
     W = "w"
     NW = "nw"
@@ -69,6 +72,32 @@ class Direction(Enum):
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
+
+
+class Coordinate(NamedTuple):
+    x: int
+    y: int
+
+    def move(self, direction: Direction) -> 'Coordinate':
+        if direction == Direction.NE:
+            return Coordinate(self.x + 1, self.y - 1)
+        if direction == Direction.E:
+            return Coordinate(self.x + 1, self.y)
+        if direction == Direction.SE:
+            return Coordinate(self.x, self.y + 1)
+        if direction == Direction.SW:
+            return Coordinate(self.x - 1, self.y + 1)
+        if direction == Direction.W:
+            return Coordinate(self.x - 1, self.y)
+        if direction == Direction.NW:
+            return Coordinate(self.x, self.y - 1)
+
+    def move_multiple(self, directions: Iterable[Direction]) -> 'Coordinate':
+        return reduce(
+            lambda coord, direction: coord.move(direction),
+            directions,
+            self
+        )
 
 
 def _parse(lines: Iterable[str]) -> Iterable[Iterable[Direction]]:
@@ -80,7 +109,7 @@ def _parse_directions(line: str) -> Iterator[Direction]:
     index = 0
     while index < len(safe_line):
         if index + 1 < len(safe_line):
-            two_chars = safe_line[index:index+2]
+            two_chars = safe_line[index:index + 2]
             if Direction.has_value(two_chars):
                 yield Direction(two_chars)
                 index += 2
@@ -90,5 +119,27 @@ def _parse_directions(line: str) -> Iterator[Direction]:
         index += 1
 
 
+def _flip_tile(tiles: DefaultDict[Coordinate, bool],
+               directions: Iterable[Direction],
+               from_tile: Coordinate = Coordinate(x=0, y=0)):
+    coord = from_tile.move_multiple(directions)
+    tiles[coord] = not tiles[coord]
+
+
+def solve_part1(tiles_to_flip: Iterable[Iterable[Direction]]):
+    tiles: DefaultDict[Coordinate, bool] = defaultdict(lambda: False)
+    for directions in tiles_to_flip:
+        _flip_tile(tiles, directions)
+
+    return count(filter(True.__eq__, tiles.values()))
+
+
 if __name__ == "__main__":
-    pass
+    with open(os.path.join(os.path.dirname(__file__), "input")) as file:
+        _list_of_directions = _parse(file.readlines())
+
+        start = time.time()
+        solution_part1 = solve_part1(_list_of_directions)
+        end = time.time()
+        print(f"solution (part1): {solution_part1} in {(end - start) * 1000}ms")
+        assert solution_part1 == 277
