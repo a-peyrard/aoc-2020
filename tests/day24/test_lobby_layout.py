@@ -1,6 +1,7 @@
 from hamcrest import contains_exactly, assert_that, equal_to, same_instance, not_none
 
-from aoc.day24.lobby_layout import _parse_directions, Direction, _parse, Coordinate, solve_part1
+from aoc.day24.lobby_layout import _parse_directions, Direction, _parse, Coordinate, solve_part1, do_x_daily_flips, \
+    _count_black
 
 
 class TestParseDirections:
@@ -149,7 +150,124 @@ neswnwewnwnwseenwseesewsenwsweewe
 wseweeenwnesenwwwswnew"""
 
         # WHEN
-        res = solve_part1(_parse(raw.splitlines(keepends=True)))
+        res, _ = solve_part1(_parse(raw.splitlines(keepends=True)))
 
         # THEN
         assert_that(res, equal_to(10))
+
+
+class TestDoXDailyFlips:
+    def test_should_validate_given_example_on_day_1(self):
+        # GIVEN
+        raw = """sesenwnenenewseeswwswswwnenewsewsw
+        neeenesenwnwwswnenewnwwsewnenwseswesw
+        seswneswswsenwwnwse
+        nwnwneseeswswnenewneswwnewseswneseene
+        swweswneswnenwsewnwneneseenw
+        eesenwseswswnenwswnwnwsewwnwsene
+        sewnenenenesenwsewnenwwwse
+        wenwwweseeeweswwwnwwe
+        wsweesenenewnwwnwsenewsenwwsesesenwne
+        neeswseenwwswnwswswnw
+        nenwswwsewswnenenewsenwsenwnesesenew
+        enewnwewneswsewnwswenweswnenwsenwsw
+        sweneswneswneneenwnewenewwneswswnese
+        swwesenesewenwneswnwwneseswwne
+        enesenwswwswneneswsenwnewswseenwsese
+        wnwnesenesenenwwnenwsewesewsesesew
+        nenewswnwewswnenesenwnesewesw
+        eneswnwswnwsenenwnwnwwseeswneewsenese
+        neswnwewnwnwseenwseesewsenwsweewe
+        wseweeenwnesenwwwswnew"""
+
+        # WHEN
+        _, tiles_at_day0 = solve_part1(_parse(raw.splitlines(keepends=True)))
+
+        # WHEN
+        tiles = do_x_daily_flips(
+            tiles_at_day0,
+            number_of_days=1
+        )
+
+        # THEN
+        assert_that(
+            _count_black(tiles),
+            equal_to(15)
+        )
+
+    def test_should_validate_given_example_on_day_10(self):
+        # GIVEN
+        raw = """sesenwnenenewseeswwswswwnenewsewsw
+        neeenesenwnwwswnenewnwwsewnenwseswesw
+        seswneswswsenwwnwse
+        nwnwneseeswswnenewneswwnewseswneseene
+        swweswneswnenwsewnwneneseenw
+        eesenwseswswnenwswnwnwsewwnwsene
+        sewnenenenesenwsewnenwwwse
+        wenwwweseeeweswwwnwwe
+        wsweesenenewnwwnwsenewsenwwsesesenwne
+        neeswseenwwswnwswswnw
+        nenwswwsewswnenenewsenwsenwnesesenew
+        enewnwewneswsewnwswenweswnenwsenwsw
+        sweneswneswneneenwnewenewwneswswnese
+        swwesenesewenwneswnwwneseswwne
+        enesenwswwswneneswsenwnewswseenwsese
+        wnwnesenesenenwwnenwsewesewsesesew
+        nenewswnwewswnenesenwnesewesw
+        eneswnwswnwsenenwnwnwwseeswneewsenese
+        neswnwewnwnwseenwseesewsenwsweewe
+        wseweeenwnesenwwwswnew"""
+
+        # WHEN
+        _, tiles_at_day0 = solve_part1(_parse(raw.splitlines(keepends=True)))
+
+        # WHEN
+        tiles = do_x_daily_flips(
+            tiles_at_day0,
+            number_of_days=10
+        )
+
+        # THEN
+        assert_that(
+            _count_black(tiles),
+            equal_to(37)
+        )
+
+    def test_should_validate_given_example_on_day_100(self):
+        pass  # a bit slow...
+        # # GIVEN
+        # raw = """sesenwnenenewseeswwswswwnenewsewsw
+        # neeenesenwnwwswnenewnwwsewnenwseswesw
+        # seswneswswsenwwnwse
+        # nwnwneseeswswnenewneswwnewseswneseene
+        # swweswneswnenwsewnwneneseenw
+        # eesenwseswswnenwswnwnwsewwnwsene
+        # sewnenenenesenwsewnenwwwse
+        # wenwwweseeeweswwwnwwe
+        # wsweesenenewnwwnwsenewsenwwsesesenwne
+        # neeswseenwwswnwswswnw
+        # nenwswwsewswnenenewsenwsenwnesesenew
+        # enewnwewneswsewnwswenweswnenwsenwsw
+        # sweneswneswneneenwnewenewwneswswnese
+        # swwesenesewenwneswnwwneseswwne
+        # enesenwswwswneneswsenwnewswseenwsese
+        # wnwnesenesenenwwnenwsewesewsesesew
+        # nenewswnwewswnenesenwnesewesw
+        # eneswnwswnwsenenwnwnwwseeswneewsenese
+        # neswnwewnwnwseenwseesewsenwsweewe
+        # wseweeenwnesenwwwswnew"""
+        #
+        # # WHEN
+        # _, tiles_at_day0 = solve_part1(_parse(raw.splitlines(keepends=True)))
+        #
+        # # WHEN
+        # tiles = do_x_daily_flips(
+        #     tiles_at_day0,
+        #     number_of_days=100
+        # )
+        #
+        # # THEN
+        # assert_that(
+        #     _count_black(tiles),
+        #     equal_to(2208)
+        # )

@@ -20,7 +20,3 @@ def last(iterable: Iterable[T],
         pass
 
     return _last
-
-
-def count(iterable: Iterable[T]):
-    return reduce(add, iterable, 0)
