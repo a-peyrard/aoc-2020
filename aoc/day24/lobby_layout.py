@@ -90,7 +90,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Iterable
 from enum import Enum
 from functools import reduce
-from typing import DefaultDict, NamedTuple, Dict
+from typing import DefaultDict, Dict
 
 DEBUG = False
 
@@ -108,30 +108,28 @@ class Direction(Enum):
         return value in cls._value2member_map_
 
 
-class Coordinate(NamedTuple):
-    x: int
-    y: int
+DIRECTION_INCREMENTS: Dict[Direction, complex] = {
+    Direction.NE: 1 - 1j,
+    Direction.E: 1 + 0j,
+    Direction.SE: 0 + 1j,
+    Direction.SW: -1 + 1j,
+    Direction.W: -1 + 0j,
+    Direction.NW: 0 - 1j,
+}
 
-    def move(self, direction: Direction) -> 'Coordinate':
-        if direction == Direction.NE:
-            return Coordinate(self.x + 1, self.y - 1)
-        if direction == Direction.E:
-            return Coordinate(self.x + 1, self.y)
-        if direction == Direction.SE:
-            return Coordinate(self.x, self.y + 1)
-        if direction == Direction.SW:
-            return Coordinate(self.x - 1, self.y + 1)
-        if direction == Direction.W:
-            return Coordinate(self.x - 1, self.y)
-        if direction == Direction.NW:
-            return Coordinate(self.x, self.y - 1)
+Coordinate = complex
 
-    def move_multiple(self, directions: Iterable[Direction]) -> 'Coordinate':
-        return reduce(
-            lambda coord, direction: coord.move(direction),
-            directions,
-            self
-        )
+
+def move(coord: Coordinate, direction: Direction) -> Coordinate:
+    return coord + DIRECTION_INCREMENTS[direction]
+
+
+def move_multiple(self, directions: Iterable[Direction]) -> Coordinate:
+    return reduce(
+        lambda coord, direction: move(coord, direction),
+        directions,
+        self
+    )
 
 
 def _parse(lines: Iterable[str]) -> Iterable[Iterable[Direction]]:
@@ -155,8 +153,8 @@ def _parse_directions(line: str) -> Iterator[Direction]:
 
 def _flip_tile(directions: Iterable[Direction],
                tiles: DefaultDict[Coordinate, bool],
-               from_tile: Coordinate = Coordinate(x=0, y=0)):
-    coord = from_tile.move_multiple(directions)
+               from_tile: Coordinate = complex(0, 0)):
+    coord = move_multiple(from_tile, directions)
     tiles[coord] = not tiles[coord]
 
 
@@ -175,14 +173,14 @@ def _count_black(tiles: Dict[Coordinate, bool]) -> int:
 def _get_neighbors(coord: Coordinate, include_self: bool = False) -> Iterator[Coordinate]:
     if include_self:
         yield coord
-    for direction in Direction:
-        yield coord.move(direction)
+    for increment in DIRECTION_INCREMENTS.values():
+        yield coord + increment
 
 
 def _count_neighbors_black(coord: Coordinate,
                            tiles: Dict[Coordinate, bool]) -> int:
     return sum((
-        True
+        1
         for neighbor in _get_neighbors(coord)
         if tiles.get(neighbor)
     ))

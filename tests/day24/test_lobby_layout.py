@@ -1,7 +1,7 @@
 from hamcrest import contains_exactly, assert_that, equal_to, same_instance, not_none
 
 from aoc.day24.lobby_layout import _parse_directions, Direction, _parse, Coordinate, solve_part1, do_x_daily_flips, \
-    _count_black
+    _count_black, move, move_multiple
 
 
 class TestParseDirections:
@@ -83,45 +83,46 @@ swnew"""
 class TestCoordinate:
     def test_should_move_to_another_direction(self):
         # GIVEN
-        coord = Coordinate(x=0, y=0)
+        coord = complex(0, 0)
 
         # WHEN
-        another_coord = coord.move(Direction.NW)
+        another_coord = move(coord, Direction.NW)
 
         # THEN
         assert_that(
             another_coord,
-            equal_to(Coordinate(x=0, y=-1))
+            equal_to(complex(0, -1))
         )
 
     def test_should_move_and_go_back_to_initial_position(self):
         # GIVEN
-        coord = Coordinate(x=0, y=0)
+        coord = complex(0, 0)
 
         # WHEN
-        another_coord = coord.move(Direction.SW).move(Direction.NE)
+        another_coord = move(move(coord, Direction.SW), Direction.NE)
 
         # THEN
-        assert_that(another_coord, not_none())
         assert_that(another_coord, equal_to(coord))
 
     def test_should_jump_and_go_back_to_initial_tile_with_path(self):
         # GIVEN
-        coord = Coordinate(x=0, y=0)
+        coord = complex(0, 0)
 
         # WHEN
-        another_coord = coord.move_multiple((
-            Direction.SE,
-            Direction.SE,
-            Direction.W,
-            Direction.W,
-            Direction.NW,
-            Direction.NE,
-            Direction.E,
-        ))
+        another_coord = move_multiple(
+            coord,
+            (
+                Direction.SE,
+                Direction.SE,
+                Direction.W,
+                Direction.W,
+                Direction.NW,
+                Direction.NE,
+                Direction.E,
+            )
+        )
 
         # THEN
-        assert_that(another_coord, not_none())
         assert_that(another_coord, equal_to(coord))
 
 
@@ -234,40 +235,39 @@ class TestDoXDailyFlips:
         )
 
     def test_should_validate_given_example_on_day_100(self):
-        pass  # a bit slow...
-        # # GIVEN
-        # raw = """sesenwnenenewseeswwswswwnenewsewsw
-        # neeenesenwnwwswnenewnwwsewnenwseswesw
-        # seswneswswsenwwnwse
-        # nwnwneseeswswnenewneswwnewseswneseene
-        # swweswneswnenwsewnwneneseenw
-        # eesenwseswswnenwswnwnwsewwnwsene
-        # sewnenenenesenwsewnenwwwse
-        # wenwwweseeeweswwwnwwe
-        # wsweesenenewnwwnwsenewsenwwsesesenwne
-        # neeswseenwwswnwswswnw
-        # nenwswwsewswnenenewsenwsenwnesesenew
-        # enewnwewneswsewnwswenweswnenwsenwsw
-        # sweneswneswneneenwnewenewwneswswnese
-        # swwesenesewenwneswnwwneseswwne
-        # enesenwswwswneneswsenwnewswseenwsese
-        # wnwnesenesenenwwnenwsewesewsesesew
-        # nenewswnwewswnenesenwnesewesw
-        # eneswnwswnwsenenwnwnwwseeswneewsenese
-        # neswnwewnwnwseenwseesewsenwsweewe
-        # wseweeenwnesenwwwswnew"""
-        #
-        # # WHEN
-        # _, tiles_at_day0 = solve_part1(_parse(raw.splitlines(keepends=True)))
-        #
-        # # WHEN
-        # tiles = do_x_daily_flips(
-        #     tiles_at_day0,
-        #     number_of_days=100
-        # )
-        #
-        # # THEN
-        # assert_that(
-        #     _count_black(tiles),
-        #     equal_to(2208)
-        # )
+        # GIVEN
+        raw = """sesenwnenenewseeswwswswwnenewsewsw
+        neeenesenwnwwswnenewnwwsewnenwseswesw
+        seswneswswsenwwnwse
+        nwnwneseeswswnenewneswwnewseswneseene
+        swweswneswnenwsewnwneneseenw
+        eesenwseswswnenwswnwnwsewwnwsene
+        sewnenenenesenwsewnenwwwse
+        wenwwweseeeweswwwnwwe
+        wsweesenenewnwwnwsenewsenwwsesesenwne
+        neeswseenwwswnwswswnw
+        nenwswwsewswnenenewsenwsenwnesesenew
+        enewnwewneswsewnwswenweswnenwsenwsw
+        sweneswneswneneenwnewenewwneswswnese
+        swwesenesewenwneswnwwneseswwne
+        enesenwswwswneneswsenwnewswseenwsese
+        wnwnesenesenenwwnenwsewesewsesesew
+        nenewswnwewswnenesenwnesewesw
+        eneswnwswnwsenenwnwnwwseeswneewsenese
+        neswnwewnwnwseenwseesewsenwsweewe
+        wseweeenwnesenwwwswnew"""
+
+        # WHEN
+        _, tiles_at_day0 = solve_part1(_parse(raw.splitlines(keepends=True)))
+
+        # WHEN
+        tiles = do_x_daily_flips(
+            tiles_at_day0,
+            number_of_days=100
+        )
+
+        # THEN
+        assert_that(
+            _count_black(tiles),
+            equal_to(2208)
+        )
