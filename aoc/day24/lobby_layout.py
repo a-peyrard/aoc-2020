@@ -211,10 +211,15 @@ def _should_be_black(tile: Coordinate,
 
 def _do_daily_flips(tiles: Dict[Coordinate, bool]) -> Dict[Coordinate, bool]:
     # we get all the black tiles and we analyze the neighbors
-    return {
-        tile: True
+    tiles_to_analyze = {
+        tile
         for black_tile in _get_black_tiles(tiles)
         for tile in _get_neighbors(black_tile, include_self=True)
+    }
+
+    return {
+        tile: True
+        for tile in tiles_to_analyze
         if _should_be_black(tile, tiles)
     }
 
